@@ -1,0 +1,25 @@
+[workspace]
+members = [
+    "frontend",
+    "backend",
+    "shared",
+    "src-tauri",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+repository = "https://github.com/JoyOfHardware/FastWave2.0"
+authors = ["FastWave authors"]
+readme = "../README.md"
+publish = false
+
+[workspace.dependencies]
+# wellen = { version = "0.9.9", features = ["serde1"] }
+# wellen = { path = "../wellen/wellen", features = ["serde1"] }
+wellen = { git = "https://github.com/MartinKavik/wellen", features = ["serde1"], branch = "new_pub_types" }
+# moon = { path = "../../crates/moon" }
+# zoon = { path = "../../crates/zoon" }
+zoon = { git = "https://github.com/MoonZoon/MoonZoon", rev = "fc73b0d90bf39be72e70fdcab4f319ea5b8e6cfc" }
+moon = { git = "https://github.com/MoonZoon/MoonZoon", rev = "fc73b0d90bf39be72e70fdcab4f319ea5b8e6cfc" }

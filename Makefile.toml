@@ -1,0 +1,224 @@
+[config]
+default_to_workspace = false
+min_version = "0.35.13"
+unstable_features = ["CTRL_C_HANDLING"]
+skip_core_tasks = true
+
+[config.modify_core_tasks]
+private = true
+namespace = "default"
+
+#######  MAIN TASKS  #######
+
+[tasks.install]
+description = "Install all dependencies. It's NoOp if all deps are already installed."
+dependencies = [
+    "install_wasm_target", 
+    "install_tauri", 
+    "install_mzoon", 
+    "init_pixi_canvas",
+    "init_tauri_glue",
+]
+
+[tasks.start]
+description = "Run & watch Typescript and Rust in the debug mode"
+dependencies = ["store_current_process_id"]
+run_task = { fork = true, parallel = true, name = [
+    "tauri_dev_with_cleanup", 
+    "watch_pixi_canvas",
+    "watch_tauri_glue",
+]}
+
+[tasks.bundle]
+description = "Compile in the release mode and create installation packages"
+dependencies = ["tauri_build", "show_release_paths"]
+
+# @TODO: Format also Typescript and CSS
+[tasks.format]
+description = "Format code"
+command = "cargo"
+args = ["fmt", "--all"]
+
+######  USEFUL TASKS  ######
+
+[tasks.tauri]
+description = "Run locally installed tauri"
+command = "tauri/bin/cargo-tauri"
+args = ["${@}"]
+
+[tasks.mzoon]
+description = "Run locally installed mzoon"
+command = "mzoon/bin/mzoon"
+args = ["${@}"]
+
+# [tasks.mzoon]
+# description = "Run mzoon from a cloned MoonZoon repo"
+# command = "cargo"
+# args = ["run", "--manifest-path", "../MoonZoon/crates/mzoon/Cargo.toml", "${@}"]
+
+######  HELPER TASKS  ######
+
+[tasks.store_current_process_id]
+description = ""
+script_runner = "@duckscript"
+script = '''
+current_process_id = pid
+echo Current process id: ${current_process_id}
+set_env STORED_PROCESS_ID ${current_process_id}
+'''
+
+[tasks.tauri_dev]
+description = "Run `tauri dev`"
+extend = "tauri"
+args = ["dev"]
+
+[tasks.tauri_dev_with_cleanup]
+description = "Run forked `tauri dev` with cleanup"
+run_task = { fork = true, cleanup_task = "cleanup_after_tauri_dev", name = ["tauri_dev"] }
+
+[tasks.cleanup_after_tauri_dev]
+description = "Kill the cargo-make/makers process and all its children / forked processes"
+script_runner = "@duckscript"
+script = '''
+os = os_family
+if equals ${os} windows 
+    output = exec taskkill /PID ${STORED_PROCESS_ID} /T /F
+else
+    output = exec kill -INT -${STORED_PROCESS_ID}
+end
+'''
+
+[tasks.tauri_build]
+description = "Run `tauri build`"
+extend = "tauri"
+args = ["build"]
+
+[tasks.show_release_paths]
+description = "Show where to find build artifacts"
+script_runner = "@duckscript"
+script = '''
+echo "- See `target/release/` with built `FastWave(.exe)`"
+echo "- See `target/release/bundle/` with installation packages"
+'''
+
+[tasks.install_wasm_target]
+description = "Install Rust target `wasm32-unknown-unknown`"
+command = "rustup"
+args = ["target", "add", "wasm32-unknown-unknown"]
+
+[tasks.install_tauri]
+description = "Install Tauri CLI (tauri) locally"
+command = "cargo"
+args = [
+    "install", 
+    "tauri-cli@=2.0.0-beta.17", 
+    "--locked",
+    "--root",
+    "tauri",
+]
+
+[tasks.install_mzoon]
+description = "Install MoonZoon CLI (mzoon) locally"
+command = "cargo"
+args = [
+    "install", 
+    "mzoon", 
+    "--git", 
+    "https://github.com/MoonZoon/MoonZoon",
+    "--locked",
+    "--rev",
+    "fc73b0d90bf39be72e70fdcab4f319ea5b8e6cfc",
+    "--root",
+    "mzoon",
+]
+
+## pixi_canvas ##
+
+[tasks.init_pixi_canvas]
+description = "Initialize `frontend/typescript/pixi_canvas`"
+cwd = "frontend/typescript/pixi_canvas"
+command = "npm"
+args = ["install"]
+
+[tasks.init_pixi_canvas.windows]
+command = "npm.cmd"
+
+[tasks.watch_pixi_canvas]
+description = "Build and typescheck Typescript on change"
+run_task = { fork = true, parallel = true, name = [
+    "watch_build_pixi_canvas",
+    "watch_typecheck_pixi_canvas",
+]}
+
+[tasks.watch_build_pixi_canvas]
+description = "Compile `frontend/typescript/pixi_canvas` on change"
+cwd = "frontend/typescript/pixi_canvas"
+command = "node_modules/.bin/esbuild"
+args = ["pixi_canvas.ts", "--bundle", "--outfile=../bundles/pixi_canvas.js", "--format=esm", "--watch"]
+
+[tasks.watch_build_pixi_canvas.windows]
+command = "node_modules/.bin/esbuild.cmd"
+
+[tasks.watch_typecheck_pixi_canvas]
+description = "Typecheck `frontend/typescript/pixi_canvas` on change"
+cwd = "frontend/typescript/pixi_canvas"
+command = "node_modules/.bin/tsc"
+args = [
+    "pixi_canvas.ts",
+    "--watch",
+    "--noEmit",
+    "--preserveWatchOutput",
+    "--strict",
+    "--target", "esnext",
+    "--module", "esnext",
+    "--moduleResolution", "bundler",
+]
+
+[tasks.watch_typecheck_pixi_canvas.windows]
+command = "node_modules/.bin/tsc.cmd"
+
+## tauri_glue ##
+
+[tasks.init_tauri_glue]
+description = "Initialize `frontend/typescript/tauri_glue`"
+cwd = "frontend/typescript/tauri_glue"
+command = "npm"
+args = ["install"]
+
+[tasks.init_tauri_glue.windows]
+command = "npm.cmd"
+
+[tasks.watch_tauri_glue]
+description = "Build and typescheck Typescript on change"
+run_task = { fork = true, parallel = true, name = [
+    "watch_build_tauri_glue",
+    "watch_typecheck_tauri_glue",
+]}
+
+[tasks.watch_build_tauri_glue]
+description = "Compile `frontend/typescript/tauri_glue` on change"
+cwd = "frontend/typescript/tauri_glue"
+command = "node_modules/.bin/esbuild"
+args = ["tauri_glue.ts", "--bundle", "--outfile=../bundles/tauri_glue.js", "--format=esm", "--watch"]
+
+[tasks.watch_build_tauri_glue.windows]
+command = "node_modules/.bin/esbuild.cmd"
+
+[tasks.watch_typecheck_tauri_glue]
+description = "Typecheck `frontend/typescript/tauri_glue` on change"
+cwd = "frontend/typescript/tauri_glue"
+command = "node_modules/.bin/tsc"
+args = [
+    "tauri_glue.ts",
+    "--watch",
+    "--noEmit",
+    "--preserveWatchOutput",
+    "--strict",
+    "--target", "esnext",
+    "--module", "esnext",
+    "--moduleResolution", "bundler",
+]
+
+[tasks.watch_typecheck_tauri_glue.windows]
+command = "node_modules/.bin/tsc.cmd"
+
