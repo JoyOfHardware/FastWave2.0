@@ -31,8 +31,9 @@ fn root() -> impl Element {
             hierarchy_and_time_table.clone(),
             selected_var_refs.clone(),
         ))
-        .item(WaveformPanel::new(
-            hierarchy_and_time_table,
-            selected_var_refs,
-        ))
+        // @TODO uncomment
+        // .item(WaveformPanel::new(
+        //     hierarchy_and_time_table,
+        //     selected_var_refs,
+        // ))
 }
