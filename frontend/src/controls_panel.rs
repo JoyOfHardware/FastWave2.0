@@ -3,7 +3,7 @@ use crate::HierarchyAndTimeTable;
 use std::collections::VecDeque;
 use std::rc::Rc;
 use wellen::GetItem;
-use zoon::{println, *};
+use zoon::*;
 
 #[derive(Clone, Copy)]
 struct VarForUI<'a> {
@@ -61,7 +61,13 @@ impl ControlsPanel {
             .s(Padding::all(20))
             .s(Gap::new().y(40))
             .s(Align::new().top())
-            .item(self.load_button())
+            .item(
+                Row::new()
+                    .s(Gap::both(15))
+                    .s(Align::new().left())
+                    .item(self.load_button("simple.vcd"))
+                    .item(self.load_button("wave_27.fst"))
+            )
             .item_signal(
                 self.hierarchy_and_time_table
                     .signal_cloned()
@@ -74,7 +80,7 @@ impl ControlsPanel {
             )
     }
 
-    fn load_button(&self) -> impl Element {
+    fn load_button(&self, test_file_name: &'static str) -> impl Element {
         let (hovered, hovered_signal) = Mutable::new_and_signal(false);
         let hierarchy_and_time_table = self.hierarchy_and_time_table.clone();
         Button::new()
@@ -88,13 +94,13 @@ impl ControlsPanel {
                 El::new().s(Font::new().no_wrap()).child_signal(
                     hierarchy_and_time_table
                         .signal_ref(Option::is_some)
-                        .map_bool(|| "Unload simple.vcd", || "Load simple.vcd"),
+                        .map_bool(|| format!("Unload test file"), move || format!("Load {test_file_name}")),
                 ),
             )
             .on_hovered_change(move |is_hovered| hovered.set_neq(is_hovered))
             // @TODO REMOVE
             .after_insert(clone!((hierarchy_and_time_table) move |_| {
-                if crate::SIMULATE_CLICKS {
+                if crate::SIMULATE_CLICKS && test_file_name == "simple.vcd" {
                     let mut hierarchy_and_time_table_lock = hierarchy_and_time_table.lock_mut();
                     if hierarchy_and_time_table_lock.is_some() {
                         *hierarchy_and_time_table_lock = None;
@@ -103,16 +109,18 @@ impl ControlsPanel {
                     drop(hierarchy_and_time_table_lock);
                     let hierarchy_and_time_table = hierarchy_and_time_table.clone();
                     Task::start(async move {
-                        tauri_bridge::load_waveform().await;
+                        tauri_bridge::load_waveform(test_file_name).await;
                         let hierarchy = tauri_bridge::get_hierarchy().await;
-                        for variable in hierarchy.iter_vars() {
-                            println!("{variable:?}");
-                        }
-                        for scope in hierarchy.iter_scopes() {
-                            println!("{scope:?}");
-                        }
+                        // @TODO remove
+                        // for variable in hierarchy.iter_vars() {
+                        //     zoon::println!("{variable:?}");
+                        // }
+                        // for scope in hierarchy.iter_scopes() {
+                        //     zoon::println!("{scope:?}");
+                        // }
                         let time_table = tauri_bridge::get_time_table().await;
-                        println!("{time_table:?}");
+                        // @TODO remove
+                        // zoon::println!("{time_table:?}");
                         hierarchy_and_time_table.set(Some((Rc::new(hierarchy), Rc::new(time_table))))
                     })
                 }
@@ -126,16 +134,18 @@ impl ControlsPanel {
                 drop(hierarchy_and_time_table_lock);
                 let hierarchy_and_time_table = hierarchy_and_time_table.clone();
                 Task::start(async move {
-                    tauri_bridge::load_waveform().await;
+                    tauri_bridge::load_waveform(test_file_name).await;
                     let hierarchy = tauri_bridge::get_hierarchy().await;
-                    for variable in hierarchy.iter_vars() {
-                        println!("{variable:?}");
-                    }
-                    for scope in hierarchy.iter_scopes() {
-                        println!("{scope:?}");
-                    }
+                    // @TODO remove
+                    // for variable in hierarchy.iter_vars() {
+                    //     zoon::println!("{variable:?}");
+                    // }
+                    // for scope in hierarchy.iter_scopes() {
+                    //     zoon::println!("{scope:?}");
+                    // }
                     let time_table = tauri_bridge::get_time_table().await;
-                    println!("{time_table:?}");
+                    // @TODO remove
+                    // zoon::println!("{time_table:?}");
                     hierarchy_and_time_table.set(Some((Rc::new(hierarchy), Rc::new(time_table))))
                 })
             })
