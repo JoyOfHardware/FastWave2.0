@@ -26,6 +26,7 @@ fn root() -> impl Element {
     Row::new()
         .s(Height::fill())
         .s(Font::new().color(color!("Lavender")))
+        .s(Gap::new().x(15))
         .item(ControlsPanel::new(
             hierarchy_and_time_table.clone(),
             selected_var_refs.clone(),
