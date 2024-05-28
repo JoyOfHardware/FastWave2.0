@@ -1,12 +1,16 @@
 use crate::tauri_bridge;
 use crate::HierarchyAndTimeTable;
+use std::mem;
 use std::rc::Rc;
+use futures_util::join;
 use wellen::GetItem;
 use zoon::*;
 
-#[derive(Clone, Copy)]
-struct VarForUI<'a> {
-    name: &'a str,
+const SCOPE_VAR_ROW_MAX_WIDTH: u32 = 480;
+
+#[derive(Clone)]
+struct VarForUI {
+    name: Rc<String>,
     var_type: wellen::VarType,
     var_direction: wellen::VarDirection,
     var_ref: wellen::VarRef,
@@ -58,8 +62,8 @@ impl ControlsPanel {
         let triggers = self.triggers();
         Column::new()
             .after_remove(move |_| drop(triggers))
-            .s(Scrollbars::y_and_clip_x())
             .s(Height::fill())
+            .s(Scrollbars::y_and_clip_x())
             .s(Padding::all(20))
             .s(Gap::new().y(40))
             .s(Align::new().top())
@@ -113,8 +117,7 @@ impl ControlsPanel {
                 let hierarchy_and_time_table = hierarchy_and_time_table.clone();
                 Task::start(async move {
                     tauri_bridge::load_waveform(test_file_name).await;
-                    let hierarchy = tauri_bridge::get_hierarchy().await;
-                    let time_table = tauri_bridge::get_time_table().await;
+                    let (hierarchy, time_table) = join!(tauri_bridge::get_hierarchy(), tauri_bridge::get_time_table());
                     hierarchy_and_time_table.set(Some((Rc::new(hierarchy), Rc::new(time_table))))
                 })
             })
@@ -122,6 +125,8 @@ impl ControlsPanel {
 
     fn scopes_panel(&self, hierarchy: Rc<wellen::Hierarchy>) -> impl Element {
         Column::new()
+            .s(Height::fill().min(150))
+            .s(Scrollbars::y_and_clip_x())
             .s(Gap::new().y(20))
             .item(El::new().child("Scopes"))
             .item(self.scopes_list(hierarchy))
@@ -153,6 +158,8 @@ impl ControlsPanel {
         Column::new()
             .s(Align::new().left())
             .s(Gap::new().y(10))
+            .s(Height::fill())
+            .s(Scrollbars::y_and_clip_x())
             .items(
                 scopes_for_ui
                     .into_iter()
@@ -196,7 +203,8 @@ impl ControlsPanel {
         El::new()
             // @TODO Add `Display` Style to MoonZoon? Merge with `Visible` Style?
             .update_raw_el(|raw_el| raw_el.style_signal("display", display))
-            .s(Padding::new().left(scope_for_ui.level * 30))
+            .s(Padding::new().left(scope_for_ui.level * 30).right(15))
+            .s(Width::default().max(SCOPE_VAR_ROW_MAX_WIDTH))
             .after_remove(move |_| drop(task_collapse))
             .child(
                 Row::new()
@@ -233,6 +241,7 @@ impl ControlsPanel {
     ) -> impl Element {
         Button::new()
             .s(Padding::new().x(15).y(5))
+            .s(Font::new().wrap_anywhere())
             .on_hovered_change(move |is_hovered| button_hovered.set_neq(is_hovered))
             .on_press(clone!((self.selected_scope_ref => selected_scope_ref, scope_for_ui.scope_ref => scope_ref) move || selected_scope_ref.set_neq(Some(scope_ref))))
             .label(scope_for_ui.name)
@@ -242,12 +251,15 @@ impl ControlsPanel {
         let selected_scope_ref = self.selected_scope_ref.clone();
         Column::new()
             .s(Gap::new().y(20))
+            .s(Height::fill().min(150))
+            .s(Scrollbars::y_and_clip_x())
             .item(El::new().child("Variables"))
             .item_signal(selected_scope_ref.signal().map_some(
                 clone!((self => s) move |scope_ref| s.vars_list(scope_ref, hierarchy.clone())),
             ))
     }
 
+    // @TODO Group variables
     fn vars_list(
         &self,
         selected_scope_ref: wellen::ScopeRef,
@@ -259,26 +271,58 @@ impl ControlsPanel {
             .map(|var_ref| {
                 let var = hierarchy.get(var_ref);
                 VarForUI {
-                    name: var.name(&hierarchy),
+                    name: Rc::new(var.name(&hierarchy).to_owned()),
                     var_type: var.var_type(),
                     var_direction: var.direction(),
                     var_ref,
                     signal_type: var.signal_tpe(),
                 }
             });
+
+        // Lazy loading to not freeze the main thread
+        const CHUNK_SIZE: usize = 50;
+        let mut chunked_vars_for_ui: Vec<Vec<VarForUI>> = <_>::default();
+        let mut chunk = Vec::with_capacity(CHUNK_SIZE);
+        for (index, var_for_ui) in vars_for_ui.enumerate() {
+            chunk.push(var_for_ui);
+            if index % CHUNK_SIZE == 0 {
+                chunked_vars_for_ui.push(mem::take(&mut chunk));
+            }
+        }
+        if not(chunk.is_empty()) {
+            chunked_vars_for_ui.push(chunk);
+        }
+        let vars_for_ui_mutable_vec = MutableVec::<VarForUI>::new();
+        let append_vars_for_ui_task =
+            Task::start_droppable(clone!((vars_for_ui_mutable_vec) async move {
+                for chunk in chunked_vars_for_ui {
+                    Task::next_macro_tick().await;
+                    vars_for_ui_mutable_vec.lock_mut().extend(chunk);
+                }
+            }));
+
         Column::new()
             .s(Align::new().left())
             .s(Gap::new().y(10))
-            .items(vars_for_ui.map(clone!((self => s) move |var_for_ui| s.var_row(var_for_ui))))
+            .s(Height::fill())
+            .s(Scrollbars::y_and_clip_x())
+            .items_signal_vec(
+                vars_for_ui_mutable_vec
+                    .signal_vec_cloned()
+                    .map(clone!((self => s) move |var_for_ui| s.var_row(var_for_ui))),
+            )
+            .after_remove(move |_| drop(append_vars_for_ui_task))
     }
 
     fn var_row(&self, var_for_ui: VarForUI) -> impl Element {
         Row::new()
             .s(Gap::new().x(10))
-            .item(self.var_button(var_for_ui))
-            .item(self.var_tag_type(var_for_ui))
-            .item(self.var_tag_index(var_for_ui))
-            .item(self.var_tag_bit(var_for_ui))
+            .s(Padding::new().right(15))
+            .s(Width::default().max(SCOPE_VAR_ROW_MAX_WIDTH))
+            .item(self.var_button(var_for_ui.clone()))
+            .item(self.var_tag_type(var_for_ui.clone()))
+            .item(self.var_tag_index(var_for_ui.clone()))
+            .item(self.var_tag_bit(var_for_ui.clone()))
             .item(self.var_tag_direction(var_for_ui))
     }
 
@@ -287,6 +331,7 @@ impl ControlsPanel {
         let selected_var_ref = self.selected_var_refs.clone();
         El::new().child(
             Button::new()
+                .s(Font::new().wrap_anywhere())
                 .s(Padding::new().x(15).y(5))
                 .s(Background::new().color_signal(
                     hovered_signal.map_bool(|| color!("MediumSlateBlue"), || color!("SlateBlue")),
