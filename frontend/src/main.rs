@@ -12,7 +12,7 @@ use waveform_panel::WaveformPanel;
 type HierarchyAndTimeTable = (Rc<wellen::Hierarchy>, Rc<wellen::TimeTable>);
 
 // @TODO REMOVE
-const SIMULATE_CLICKS: bool = true;
+const SIMULATE_CLICKS: bool = false;
 
 fn main() {
     start_app("app", root);

@@ -1,6 +1,5 @@
 use crate::tauri_bridge;
 use crate::HierarchyAndTimeTable;
-use std::collections::VecDeque;
 use std::rc::Rc;
 use wellen::GetItem;
 use zoon::*;
@@ -14,11 +13,14 @@ struct VarForUI<'a> {
     signal_type: wellen::SignalType,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 struct ScopeForUI<'a> {
     level: u32,
     name: &'a str,
     scope_ref: wellen::ScopeRef,
+    has_children: bool,
+    expanded: Mutable<bool>,
+    parent_expanded: Option<ReadOnlyMutable<bool>>,
 }
 
 #[derive(Clone)]
@@ -161,17 +163,23 @@ impl ControlsPanel {
     fn scopes_list(&self, hierarchy: Rc<wellen::Hierarchy>) -> impl Element {
         let mut scopes_for_ui = Vec::new();
         for scope_ref in hierarchy.scopes() {
-            let mut scope_refs = VecDeque::new();
-            scope_refs.push_back((0, scope_ref));
-            while let Some((level, scope_ref)) = scope_refs.pop_front() {
+            let mut scope_refs = Vec::new();
+            scope_refs.push((0, scope_ref, None));
+            while let Some((level, scope_ref, parent_expanded)) = scope_refs.pop() {
                 let scope = hierarchy.get(scope_ref);
+                let mut children = scope.scopes(&hierarchy).peekable();
+                let has_children = children.peek().is_some();
+                let expanded = Mutable::new(false);
                 scopes_for_ui.push(ScopeForUI {
                     level,
                     name: scope.name(&hierarchy),
                     scope_ref,
+                    has_children,
+                    expanded: expanded.clone(),
+                    parent_expanded,
                 });
-                for scope_ref in scope.scopes(&hierarchy) {
-                    scope_refs.push_back((level + 1, scope_ref));
+                for scope_ref in children {
+                    scope_refs.push((level + 1, scope_ref, Some(expanded.read_only())));
                 }
             }
         }
@@ -181,25 +189,40 @@ impl ControlsPanel {
             .items(
                 scopes_for_ui
                     .into_iter()
-                    .map(clone!((self => s) move |scope_for_ui| s.scope_button(scope_for_ui))),
+                    .map(clone!((self => s) move |scope_for_ui| s.scope_button_row(scope_for_ui))),
             )
     }
 
-    fn scope_button(&self, scope_for_ui: ScopeForUI) -> impl Element {
-        let (hovered, hovered_signal) = Mutable::new_and_signal(false);
+    fn scope_button_row(&self, scope_for_ui: ScopeForUI) -> impl Element {
+        let (button_hovered, button_hovered_signal) = Mutable::new_and_signal(false);
         let selected_scope_ref = self.selected_scope_ref.clone();
         let is_selected = selected_scope_ref
             .signal()
             .map(move |selected_scope_ref| selected_scope_ref == Some(scope_for_ui.scope_ref));
         let background_color = map_ref! {
             let is_selected = is_selected,
-            let is_hovered = hovered_signal => match (*is_selected, *is_hovered) {
+            let is_hovered = button_hovered_signal => match (*is_selected, *is_hovered) {
                 (true, _) => color!("BlueViolet"),
                 (false, true) => color!("MediumSlateBlue"),
                 (false, false) => color!("SlateBlue"),
             }
         };
+        let task_collapse = { 
+            let expanded = scope_for_ui.expanded.clone();
+                scope_for_ui.parent_expanded.clone().map(|parent_expanded| {
+                Task::start_droppable(parent_expanded.signal().for_each_sync(move |parent_expanded| {
+                    if not(parent_expanded) {
+                        expanded.set_neq(false);
+                    }
+                }))
+            }) 
+        };
+        let display = signal::option(scope_for_ui.parent_expanded.clone().map(|parent_expanded| {
+            parent_expanded.signal().map_false(|| "none")
+        })).map(Option::flatten);
         El::new()
+            // @TODO Add `Display` Style to MoonZoon? Merge with `Visible` Style?
+            .update_raw_el(|raw_el| raw_el.style_signal("display", display))
             // @TODO REMOVE
             .after_insert(
                 clone!((selected_scope_ref, scope_for_ui.scope_ref => scope_ref) move |_| {
@@ -209,15 +232,41 @@ impl ControlsPanel {
                 }),
             )
             .s(Padding::new().left(scope_for_ui.level * 30))
+            .after_remove(move |_| drop(task_collapse))
             .child(
-                Button::new()
-                    .s(Padding::new().x(15).y(5))
+                Row::new()
                     .s(Background::new().color_signal(background_color))
                     .s(RoundedCorners::all(15))
-                    .on_hovered_change(move |is_hovered| hovered.set_neq(is_hovered))
-                    .on_press(move || selected_scope_ref.set_neq(Some(scope_for_ui.scope_ref)))
-                    .label(scope_for_ui.name),
+                    .s(Clip::both())
+                    .s(Align::new().left())
+                    .item(scope_for_ui.has_children.then(clone!((self => s, scope_for_ui.expanded => expanded) move || s.scope_toggle(expanded))))
+                    .item(self.scope_button(scope_for_ui, button_hovered))
             )
+    }
+
+    fn scope_toggle(&self, expanded: Mutable<bool>) -> impl Element {
+        let (hovered, hovered_signal) = Mutable::new_and_signal(false);
+        Button::new()
+            .s(Padding::new().left(10))
+            .s(Height::fill())
+            .s(Font::new().color_signal(hovered_signal.map_true(|| color!("LightBlue"))))
+            .label(
+                El::new()
+                    .s(Transform::with_signal_self(expanded.signal().map_false(|| {
+                        Transform::new().rotate(-90)
+                    })))
+                    .child("▼")
+                )
+            .on_hovered_change(move |is_hovered| hovered.set_neq(is_hovered))
+            .on_press(move || expanded.update(not))
+    }
+
+    fn scope_button(&self, scope_for_ui: ScopeForUI, button_hovered: Mutable<bool>) -> impl Element {
+        Button::new()
+            .s(Padding::new().x(15).y(5))
+            .on_hovered_change(move |is_hovered| button_hovered.set_neq(is_hovered))
+            .on_press(clone!((self.selected_scope_ref => selected_scope_ref, scope_for_ui.scope_ref => scope_ref) move || selected_scope_ref.set_neq(Some(scope_ref))))
+            .label(scope_for_ui.name)
     }
 
     fn vars_panel(&self, hierarchy: Rc<wellen::Hierarchy>) -> impl Element {
