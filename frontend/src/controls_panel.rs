@@ -68,7 +68,7 @@ impl ControlsPanel {
                     .s(Gap::both(15))
                     .s(Align::new().left())
                     .item(self.load_button("simple.vcd"))
-                    .item(self.load_button("wave_27.fst"))
+                    .item(self.load_button("wave_27.fst")),
             )
             .item_signal(
                 self.hierarchy_and_time_table
@@ -96,37 +96,13 @@ impl ControlsPanel {
                 El::new().s(Font::new().no_wrap()).child_signal(
                     hierarchy_and_time_table
                         .signal_ref(Option::is_some)
-                        .map_bool(|| format!("Unload test file"), move || format!("Load {test_file_name}")),
+                        .map_bool(
+                            || format!("Unload test file"),
+                            move || format!("Load {test_file_name}"),
+                        ),
                 ),
             )
             .on_hovered_change(move |is_hovered| hovered.set_neq(is_hovered))
-            // @TODO REMOVE
-            .after_insert(clone!((hierarchy_and_time_table) move |_| {
-                if crate::SIMULATE_CLICKS && test_file_name == "simple.vcd" {
-                    let mut hierarchy_and_time_table_lock = hierarchy_and_time_table.lock_mut();
-                    if hierarchy_and_time_table_lock.is_some() {
-                        *hierarchy_and_time_table_lock = None;
-                        return;
-                    }
-                    drop(hierarchy_and_time_table_lock);
-                    let hierarchy_and_time_table = hierarchy_and_time_table.clone();
-                    Task::start(async move {
-                        tauri_bridge::load_waveform(test_file_name).await;
-                        let hierarchy = tauri_bridge::get_hierarchy().await;
-                        // @TODO remove
-                        // for variable in hierarchy.iter_vars() {
-                        //     zoon::println!("{variable:?}");
-                        // }
-                        // for scope in hierarchy.iter_scopes() {
-                        //     zoon::println!("{scope:?}");
-                        // }
-                        let time_table = tauri_bridge::get_time_table().await;
-                        // @TODO remove
-                        // zoon::println!("{time_table:?}");
-                        hierarchy_and_time_table.set(Some((Rc::new(hierarchy), Rc::new(time_table))))
-                    })
-                }
-            }))
             .on_press(move || {
                 let mut hierarchy_and_time_table_lock = hierarchy_and_time_table.lock_mut();
                 if hierarchy_and_time_table_lock.is_some() {
@@ -138,16 +114,7 @@ impl ControlsPanel {
                 Task::start(async move {
                     tauri_bridge::load_waveform(test_file_name).await;
                     let hierarchy = tauri_bridge::get_hierarchy().await;
-                    // @TODO remove
-                    // for variable in hierarchy.iter_vars() {
-                    //     zoon::println!("{variable:?}");
-                    // }
-                    // for scope in hierarchy.iter_scopes() {
-                    //     zoon::println!("{scope:?}");
-                    // }
                     let time_table = tauri_bridge::get_time_table().await;
-                    // @TODO remove
-                    // zoon::println!("{time_table:?}");
                     hierarchy_and_time_table.set(Some((Rc::new(hierarchy), Rc::new(time_table))))
                 })
             })
@@ -207,30 +174,28 @@ impl ControlsPanel {
                 (false, false) => color!("SlateBlue"),
             }
         };
-        let task_collapse = { 
+        let task_collapse = {
             let expanded = scope_for_ui.expanded.clone();
-                scope_for_ui.parent_expanded.clone().map(|parent_expanded| {
-                Task::start_droppable(parent_expanded.signal().for_each_sync(move |parent_expanded| {
-                    if not(parent_expanded) {
-                        expanded.set_neq(false);
-                    }
-                }))
-            }) 
+            scope_for_ui.parent_expanded.clone().map(|parent_expanded| {
+                Task::start_droppable(parent_expanded.signal().for_each_sync(
+                    move |parent_expanded| {
+                        if not(parent_expanded) {
+                            expanded.set_neq(false);
+                        }
+                    },
+                ))
+            })
         };
-        let display = signal::option(scope_for_ui.parent_expanded.clone().map(|parent_expanded| {
-            parent_expanded.signal().map_false(|| "none")
-        })).map(Option::flatten);
+        let display = signal::option(
+            scope_for_ui
+                .parent_expanded
+                .clone()
+                .map(|parent_expanded| parent_expanded.signal().map_false(|| "none")),
+        )
+        .map(Option::flatten);
         El::new()
             // @TODO Add `Display` Style to MoonZoon? Merge with `Visible` Style?
             .update_raw_el(|raw_el| raw_el.style_signal("display", display))
-            // @TODO REMOVE
-            .after_insert(
-                clone!((selected_scope_ref, scope_for_ui.scope_ref => scope_ref) move |_| {
-                    if crate::SIMULATE_CLICKS {
-                        selected_scope_ref.set_neq(Some(scope_ref));
-                    }
-                }),
-            )
             .s(Padding::new().left(scope_for_ui.level * 30))
             .after_remove(move |_| drop(task_collapse))
             .child(
@@ -252,16 +217,20 @@ impl ControlsPanel {
             .s(Font::new().color_signal(hovered_signal.map_true(|| color!("LightBlue"))))
             .label(
                 El::new()
-                    .s(Transform::with_signal_self(expanded.signal().map_false(|| {
-                        Transform::new().rotate(-90)
-                    })))
-                    .child("▼")
-                )
+                    .s(Transform::with_signal_self(
+                        expanded.signal().map_false(|| Transform::new().rotate(-90)),
+                    ))
+                    .child("▼"),
+            )
             .on_hovered_change(move |is_hovered| hovered.set_neq(is_hovered))
             .on_press(move || expanded.update(not))
     }
 
-    fn scope_button(&self, scope_for_ui: ScopeForUI, button_hovered: Mutable<bool>) -> impl Element {
+    fn scope_button(
+        &self,
+        scope_for_ui: ScopeForUI,
+        button_hovered: Mutable<bool>,
+    ) -> impl Element {
         Button::new()
             .s(Padding::new().x(15).y(5))
             .on_hovered_change(move |is_hovered| button_hovered.set_neq(is_hovered))
@@ -318,14 +287,6 @@ impl ControlsPanel {
         let selected_var_ref = self.selected_var_refs.clone();
         El::new().child(
             Button::new()
-                // @TODO REMOVE
-                .after_insert(
-                    clone!((selected_var_ref, var_for_ui.var_ref => var_ref) move |_| {
-                        if crate::SIMULATE_CLICKS {
-                            selected_var_ref.lock_mut().extend([var_ref, var_ref]);
-                        }
-                    }),
-                )
                 .s(Padding::new().x(15).y(5))
                 .s(Background::new().color_signal(
                     hovered_signal.map_bool(|| color!("MediumSlateBlue"), || color!("SlateBlue")),
