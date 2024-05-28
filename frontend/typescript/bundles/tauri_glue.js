@@ -2514,8 +2514,8 @@ var invoke2 = core_exports.invoke;
 async function show_window() {
   return await invoke2("show_window");
 }
-async function load_waveform() {
-  return await invoke2("load_waveform");
+async function load_waveform(test_file_name) {
+  return await invoke2("load_waveform", { test_file_name });
 }
 async function get_hierarchy() {
   return await invoke2("get_hierarchy");

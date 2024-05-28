@@ -4,8 +4,8 @@ pub async fn show_window() {
     tauri_glue::show_window().await
 }
 
-pub async fn load_waveform() {
-    tauri_glue::load_waveform().await
+pub async fn load_waveform(test_file_name: &'static str) {
+    tauri_glue::load_waveform(test_file_name).await
 }
 
 pub async fn get_hierarchy() -> wellen::Hierarchy {
@@ -33,7 +33,7 @@ mod tauri_glue {
     extern "C" {
         pub async fn show_window();
 
-        pub async fn load_waveform();
+        pub async fn load_waveform(test_file_name: &str);
 
         pub async fn get_hierarchy() -> JsValue;
 

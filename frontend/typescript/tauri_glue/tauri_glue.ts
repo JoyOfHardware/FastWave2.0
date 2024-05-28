@@ -12,8 +12,8 @@ export async function show_window(): Promise<void> {
     return await invoke("show_window");
 }
 
-export async function load_waveform(): Promise<void> {
-    return await invoke("load_waveform");
+export async function load_waveform(test_file_name: string): Promise<void> {
+    return await invoke("load_waveform", { test_file_name });
 }
 
 export async function get_hierarchy(): Promise<WellenHierarchy> {
