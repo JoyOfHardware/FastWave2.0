@@ -1,12 +1,20 @@
 use crate::tauri_bridge;
 use crate::HierarchyAndTimeTable;
 use std::mem;
+use std::ops::Not;
 use std::rc::Rc;
 use futures_util::join;
 use wellen::GetItem;
 use zoon::*;
 
 const SCOPE_VAR_ROW_MAX_WIDTH: u32 = 480;
+
+#[derive(Clone, Copy, Default)]
+enum Layout {
+    Tree,
+    #[default]
+    Columns,
+}
 
 #[derive(Clone)]
 struct VarForUI {
@@ -18,13 +26,14 @@ struct VarForUI {
 }
 
 #[derive(Clone)]
-struct ScopeForUI<'a> {
-    level: u32,
-    name: &'a str,
+struct ScopeForUI {
+    level: usize,
+    name: Rc<String>,
     scope_ref: wellen::ScopeRef,
     has_children: bool,
     expanded: Mutable<bool>,
     parent_expanded: Option<ReadOnlyMutable<bool>>,
+    selected_scope_in_level: Mutable<Option<wellen::ScopeRef>>,
 }
 
 #[derive(Clone)]
@@ -32,6 +41,7 @@ pub struct ControlsPanel {
     selected_scope_ref: Mutable<Option<wellen::ScopeRef>>,
     hierarchy_and_time_table: Mutable<Option<HierarchyAndTimeTable>>,
     selected_var_refs: MutableVec<wellen::VarRef>,
+    layout: Mutable<Layout>,
 }
 
 impl ControlsPanel {
@@ -43,6 +53,7 @@ impl ControlsPanel {
             selected_scope_ref: <_>::default(),
             hierarchy_and_time_table,
             selected_var_refs,
+            layout: <_>::default(),
         }
         .root()
     }
@@ -63,7 +74,8 @@ impl ControlsPanel {
         Column::new()
             .after_remove(move |_| drop(triggers))
             .s(Height::fill())
-            .s(Scrollbars::y_and_clip_x())
+            .s(Width::fill())
+            .s(Scrollbars::both())
             .s(Padding::all(20))
             .s(Gap::new().y(40))
             .s(Align::new().top())
@@ -72,7 +84,8 @@ impl ControlsPanel {
                     .s(Gap::both(15))
                     .s(Align::new().left())
                     .item(self.load_button("simple.vcd"))
-                    .item(self.load_button("wave_27.fst")),
+                    .item(self.load_button("wave_27.fst"))
+                    .item(self.layout_switcher()),
             )
             .item_signal(
                 self.hierarchy_and_time_table
@@ -123,51 +136,128 @@ impl ControlsPanel {
             })
     }
 
+    fn layout_switcher(&self) -> impl Element {
+        let layout = self.layout.clone();
+        let (hovered, hovered_signal) = Mutable::new_and_signal(false);
+        Button::new()
+            .s(Padding::new().x(20).y(10))
+            .s(Background::new().color_signal(
+                hovered_signal.map_bool(|| color!("MediumSlateBlue"), || color!("SlateBlue")),
+            ))
+            .s(Align::new().left())
+            .s(RoundedCorners::all(15))
+            .label_signal(layout.signal().map(|layout| match layout {
+                Layout::Tree => "Columns",
+                Layout::Columns => "Tree",
+            }))
+            .on_hovered_change(move |is_hovered| hovered.set_neq(is_hovered))
+            .on_press(move || layout.update(|layout| match layout {
+                Layout::Tree => Layout::Columns,
+                Layout::Columns => Layout::Tree,
+            }))
+    }
+
     fn scopes_panel(&self, hierarchy: Rc<wellen::Hierarchy>) -> impl Element {
         Column::new()
             .s(Height::fill().min(150))
             .s(Scrollbars::y_and_clip_x())
             .s(Gap::new().y(20))
+            .s(Width::fill())
             .item(El::new().child("Scopes"))
             .item(self.scopes_list(hierarchy))
     }
 
     fn scopes_list(&self, hierarchy: Rc<wellen::Hierarchy>) -> impl Element {
+        let layout = self.layout.clone();
         let mut scopes_for_ui = Vec::new();
+        let mut max_level_index: usize = 0;
         for scope_ref in hierarchy.scopes() {
             let mut scope_refs = Vec::new();
             scope_refs.push((0, scope_ref, None));
+            let mut selected_scope_in_levels: Vec<Mutable<Option<wellen::ScopeRef>>> = vec![<_>::default()];
             while let Some((level, scope_ref, parent_expanded)) = scope_refs.pop() {
                 let scope = hierarchy.get(scope_ref);
                 let mut children = scope.scopes(&hierarchy).peekable();
                 let has_children = children.peek().is_some();
                 let expanded = Mutable::new(false);
+                if level > max_level_index {
+                    max_level_index = level;
+                    selected_scope_in_levels.push(<_>::default());
+                }
                 scopes_for_ui.push(ScopeForUI {
                     level,
-                    name: scope.name(&hierarchy),
+                    name: Rc::new(scope.name(&hierarchy).to_owned()),
                     scope_ref,
                     has_children,
                     expanded: expanded.clone(),
                     parent_expanded,
+                    selected_scope_in_level: selected_scope_in_levels[level].clone(),
                 });
                 for scope_ref in children {
                     scope_refs.push((level + 1, scope_ref, Some(expanded.read_only())));
                 }
             }
         }
-        Column::new()
-            .s(Align::new().left())
-            .s(Gap::new().y(10))
+        let scopes_for_ui = Rc::new(scopes_for_ui);
+        let s = self.clone();
+        El::new()
             .s(Height::fill())
-            .s(Scrollbars::y_and_clip_x())
-            .items(
-                scopes_for_ui
-                    .into_iter()
-                    .map(clone!((self => s) move |scope_for_ui| s.scope_button_row(scope_for_ui))),
-            )
+            .s(Scrollbars::both())
+            .s(Width::fill())
+            .child_signal(layout.signal().map(move |layout| match layout {
+                Layout::Tree => {
+                    Column::new()
+                        .s(Align::new().left())
+                        .s(Gap::new().y(10))
+                        .s(Height::fill())
+                        .s(Scrollbars::y_and_clip_x())
+                        .s(Padding::new().right(15))
+                        .items(
+                            scopes_for_ui
+                                .iter()
+                                .map(clone!((s) move |scope_for_ui| s.scope_button_row(scope_for_ui.clone()))),
+                        ).unify()
+                }
+                Layout::Columns => {
+                    let mut scopes_for_ui_in_levels: Vec<Vec<ScopeForUI>> = vec![Vec::new(); max_level_index + 1];
+                    for scope_for_ui in scopes_for_ui.iter() {
+                        scopes_for_ui_in_levels[scope_for_ui.level].push(scope_for_ui.clone());
+                    }
+                    let viewport_x = Mutable::new(0);
+                    El::new()
+                        .s(Height::fill())
+                        .s(Scrollbars::x_and_clip_y())
+                        .s(Padding::new().bottom(15))
+                        .s(Width::fill())
+                        .viewport_x_signal(viewport_x.signal())
+                        .child(
+                            Row::new()
+                                .s(Height::fill())
+                                // @TODO add `width: max-content` to MoonZoon's `Width`?
+                                .update_raw_el(|raw_el| raw_el.style("width", "max-content"))
+                                .on_viewport_size_change(move |width, _| viewport_x.set(i32::MAX))
+                                .items(scopes_for_ui_in_levels.into_iter().map(|scopes_in_level| {
+                                    Column::new()
+                                        .s(Height::fill())
+                                        .s(Scrollbars::y_and_clip_x())
+                                        // @TODO `Width::default` add the class `exact_width` with `flex-shrink: 0;`
+                                        // We should make it more explicit / discoverable in MoonZoon
+                                        .s(Width::default())
+                                        .s(Gap::new().y(10))
+                                        .s(Padding::new().x(10))
+                                        .items(
+                                            scopes_in_level
+                                                .into_iter()
+                                                .map(clone!((s) move |scope_for_ui| s.scope_button_row(scope_for_ui)))
+                                        )
+                                })
+                        )).unify()
+                }
+            }))
     }
 
     fn scope_button_row(&self, scope_for_ui: ScopeForUI) -> impl Element {
+        let layout = self.layout.clone();
         let (button_hovered, button_hovered_signal) = Mutable::new_and_signal(false);
         let selected_scope_ref = self.selected_scope_ref.clone();
         let is_selected = selected_scope_ref
@@ -181,7 +271,7 @@ impl ControlsPanel {
                 (false, false) => color!("SlateBlue"),
             }
         };
-        let task_collapse = {
+        let task_collapse_on_parent_collapse = {
             let expanded = scope_for_ui.expanded.clone();
             scope_for_ui.parent_expanded.clone().map(|parent_expanded| {
                 Task::start_droppable(parent_expanded.signal().for_each_sync(
@@ -193,6 +283,22 @@ impl ControlsPanel {
                 ))
             })
         };
+        let task_collapse_on_sibling_scope_selection = {
+            let expanded = scope_for_ui.expanded.clone();
+            let scope_ref = scope_for_ui.scope_ref;
+            let layout = layout.clone();
+            Task::start_droppable(scope_for_ui.selected_scope_in_level.signal().for_each_sync(
+                move |selected_scope_in_level| {
+                    if matches!(layout.get(), Layout::Columns) {
+                        if let Some(selected_scope) = selected_scope_in_level {
+                            if selected_scope != scope_ref {
+                                expanded.set_neq(false);
+                            }
+                        }
+                    }
+                },
+            ))
+        };
         let display = signal::option(
             scope_for_ui
                 .parent_expanded
@@ -200,38 +306,71 @@ impl ControlsPanel {
                 .map(|parent_expanded| parent_expanded.signal().map_false(|| "none")),
         )
         .map(Option::flatten);
+        let level = scope_for_ui.level as u32;
         El::new()
             // @TODO Add `Display` Style to MoonZoon? Merge with `Visible` Style?
             .update_raw_el(|raw_el| raw_el.style_signal("display", display))
-            .s(Padding::new().left(scope_for_ui.level * 30).right(15))
+            .s(Padding::new().left_signal(layout.signal().map(move |layout| match layout {
+                Layout::Tree => level * 30,
+                Layout::Columns => 0,
+            })))
             .s(Width::default().max(SCOPE_VAR_ROW_MAX_WIDTH))
-            .after_remove(move |_| drop(task_collapse))
+            .after_remove(move |_| { 
+                drop(task_collapse_on_parent_collapse);
+                drop(task_collapse_on_sibling_scope_selection);
+            })
             .child(
                 Row::new()
                     .s(Background::new().color_signal(background_color))
                     .s(RoundedCorners::all(15))
                     .s(Clip::both())
                     .s(Align::new().left())
-                    .item(scope_for_ui.has_children.then(clone!((self => s, scope_for_ui.expanded => expanded) move || s.scope_toggle(expanded))))
-                    .item(self.scope_button(scope_for_ui, button_hovered))
+                    .items_signal_vec(layout.signal().map(clone!((self => s, scope_for_ui) move |layout| { 
+                        let toggle = scope_for_ui.has_children.then(clone!((s, scope_for_ui) move || s.scope_toggle(scope_for_ui)));
+                        let button = s.scope_button(scope_for_ui.clone(), button_hovered.clone());
+                        match layout {
+                            Layout::Tree => element_vec![toggle, button],
+                            Layout::Columns => element_vec![button, toggle],
+                        }
+                    })).to_signal_vec())
             )
     }
 
-    fn scope_toggle(&self, expanded: Mutable<bool>) -> impl Element {
+    fn scope_toggle(&self, scope_for_ui: ScopeForUI) -> impl Element {
+        let expanded = scope_for_ui.expanded.clone();
+        let layout_and_expanded = map_ref! {
+            let layout = self.layout.signal(),
+            let expanded = expanded.signal() => (*layout, *expanded)
+        };
         let (hovered, hovered_signal) = Mutable::new_and_signal(false);
         Button::new()
-            .s(Padding::new().left(10))
+            .s(Padding::new()
+                .left_signal(self.layout.signal().map(|layout| matches!(layout, Layout::Tree)).map_true(|| 10))
+                .right_signal(self.layout.signal().map(|layout| matches!(layout, Layout::Columns)).map_true(|| 10))
+            )
             .s(Height::fill())
             .s(Font::new().color_signal(hovered_signal.map_true(|| color!("LightBlue"))))
             .label(
                 El::new()
-                    .s(Transform::with_signal_self(
-                        expanded.signal().map_false(|| Transform::new().rotate(-90)),
+                    .s(Transform::with_signal_self(layout_and_expanded.map(|(layout, expanded)| {
+                        match layout {
+                            Layout::Tree => expanded.not().then(|| Transform::new().rotate(-90)),
+                            Layout::Columns => Some(Transform::new().rotate(if expanded { -90 } else { 90 } ))
+                        }
+                    })
                     ))
                     .child("▼"),
             )
             .on_hovered_change(move |is_hovered| hovered.set_neq(is_hovered))
-            .on_press(move || expanded.update(not))
+            .on_press(move || { 
+                scope_for_ui.expanded.update(not);
+                if let Some(selected_scope_in_level) = scope_for_ui.selected_scope_in_level.get() {
+                    if selected_scope_in_level == scope_for_ui.scope_ref {
+                        return scope_for_ui.selected_scope_in_level.set(None);
+                    }
+                }
+                scope_for_ui.selected_scope_in_level.set(Some(scope_for_ui.scope_ref));
+            })
     }
 
     fn scope_button(
@@ -239,6 +378,7 @@ impl ControlsPanel {
         scope_for_ui: ScopeForUI,
         button_hovered: Mutable<bool>,
     ) -> impl Element {
+        let layout = self.layout.clone();
         Button::new()
             .s(Padding::new().x(15).y(5))
             .s(Font::new().wrap_anywhere())
