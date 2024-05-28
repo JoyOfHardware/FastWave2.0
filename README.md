@@ -3,6 +3,11 @@
 
 ---
 
+<p align="center">
+  <img width="800" src="https://github.com/JoyOfHardware/FastWave2.0/assets/18517402/87b7cafb-ccdf-4968-8057-3a19632f227f" alt="fastwave_screenshot" />
+</p>
+
+
 ### Start:
 
 1. Install [Rust](https://www.rust-lang.org/tools/install)
