@@ -3,7 +3,7 @@ use wellen::GetItem;
 use zoon::*;
 
 mod pixi_canvas;
-use pixi_canvas::PixiCanvas;
+use pixi_canvas::{PixiCanvas, PixiController};
 
 const ROW_HEIGHT: u32 = 40;
 const ROW_GAP: u32 = 4;
@@ -67,7 +67,13 @@ impl WaveformPanel {
                 })).for_each(clone!((controller, hierarchy_and_time_table) move |vec_diff| {
                     clone!((controller, hierarchy_and_time_table) async move {
                         match vec_diff {
-                            VecDiff::Replace { values: _ } => { todo!("`task_with_controller` + `Replace`") },
+                            VecDiff::Replace { values } => { 
+                                let controller = controller.wait_for_some_cloned().await;
+                                controller.clear_vars();
+                                for var_ref in values {
+                                    Self::push_var(&controller, &hierarchy_and_time_table, var_ref).await;
+                                }
+                            },
                             VecDiff::InsertAt { index: _, value: _ } => { todo!("`task_with_controller` + `InsertAt`") }
                             VecDiff::UpdateAt { index: _, value: _ } => { todo!("`task_with_controller` + `UpdateAt`") }
                             VecDiff::RemoveAt { index } => {
@@ -78,20 +84,7 @@ impl WaveformPanel {
                             VecDiff::Move { old_index: _, new_index: _ } => { todo!("`task_with_controller` + `Move`") }
                             VecDiff::Push { value: var_ref } => {
                                 if let Some(controller) = controller.lock_ref().as_ref() {
-                                    let (hierarchy, time_table) = hierarchy_and_time_table.get_cloned().unwrap();
-                                    let var = hierarchy.get(var_ref);
-                                    let signal_ref = var.signal_ref();
-                                    let signal = tauri_bridge::load_and_get_signal(signal_ref).await;
-
-                                    let timescale = hierarchy.timescale();
-                                    zoon::println!("{timescale:?}");
-
-                                    // Note: Sync `timeline`'s type with the `Timeline` in `frontend/typescript/pixi_canvas/pixi_canvas.ts'
-                                    let mut timeline: Vec<(wellen::Time, Option<String>)> = time_table.iter().map(|time| (*time, None)).collect();
-                                    for (time_index, signal_value) in signal.iter_changes() {
-                                        timeline[time_index as usize].1 = Some(signal_value.to_string());
-                                    }
-                                    controller.push_var(serde_wasm_bindgen::to_value(&timeline).unwrap_throw());
+                                    Self::push_var(controller, &hierarchy_and_time_table, var_ref).await;
                                 }
                             }
                             VecDiff::Pop {} => {
@@ -108,6 +101,27 @@ impl WaveformPanel {
                     })
                 }))
             })
+    }
+
+    async fn push_var(
+        controller: &PixiController, 
+        hierarchy_and_time_table: &Mutable<Option<HierarchyAndTimeTable>>,
+        var_ref: wellen::VarRef,
+    ) {
+        let (hierarchy, time_table) = hierarchy_and_time_table.get_cloned().unwrap();
+        let var = hierarchy.get(var_ref);
+        let signal_ref = var.signal_ref();
+        let signal = tauri_bridge::load_and_get_signal(signal_ref).await;
+
+        let timescale = hierarchy.timescale();
+        zoon::println!("{timescale:?}");
+
+        // Note: Sync `timeline`'s type with the `Timeline` in `frontend/typescript/pixi_canvas/pixi_canvas.ts'
+        let mut timeline: Vec<(wellen::Time, Option<String>)> = time_table.iter().map(|time| (*time, None)).collect();
+        for (time_index, signal_value) in signal.iter_changes() {
+            timeline[time_index as usize].1 = Some(signal_value.to_string());
+        }
+        controller.push_var(serde_wasm_bindgen::to_value(&timeline).unwrap_throw());
     }
 
     fn selected_var_panel(
