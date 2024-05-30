@@ -46,7 +46,9 @@ export class PixiController {
     // -- FastWave-specific --
 
     remove_var(index: number) {
-        this.var_signal_rows[index].destroy();
+        if (typeof this.var_signal_rows[index] !== 'undefined') {
+            this.var_signal_rows[index].destroy();
+        }
     }
 
     push_var(timeline: Timeline) {
@@ -61,7 +63,7 @@ export class PixiController {
     }
 
     pop_var() {
-        this.var_signal_rows[this.var_signal_rows.length - 1].destroy();
+        this.remove_var(this.var_signal_rows.length - 1);
     }
 
     clear_vars() {

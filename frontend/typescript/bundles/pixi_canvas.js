@@ -35161,7 +35161,9 @@ var PixiController = class {
   }
   // -- FastWave-specific --
   remove_var(index) {
-    this.var_signal_rows[index].destroy();
+    if (typeof this.var_signal_rows[index] !== "undefined") {
+      this.var_signal_rows[index].destroy();
+    }
   }
   push_var(timeline) {
     new VarSignalRow(
@@ -35174,7 +35176,7 @@ var PixiController = class {
     );
   }
   pop_var() {
-    this.var_signal_rows[this.var_signal_rows.length - 1].destroy();
+    this.remove_var(this.var_signal_rows.length - 1);
   }
   clear_vars() {
     this.var_signal_rows.slice().reverse().forEach((row) => row.destroy());

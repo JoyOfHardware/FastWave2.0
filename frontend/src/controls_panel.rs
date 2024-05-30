@@ -1,5 +1,5 @@
 use crate::tauri_bridge;
-use crate::HierarchyAndTimeTable;
+use crate::{HierarchyAndTimeTable, Layout};
 use futures_util::join;
 use std::mem;
 use std::ops::Not;
@@ -8,13 +8,7 @@ use wellen::GetItem;
 use zoon::*;
 
 const SCOPE_VAR_ROW_MAX_WIDTH: u32 = 480;
-
-#[derive(Clone, Copy, Default)]
-enum Layout {
-    Tree,
-    #[default]
-    Columns,
-}
+const MILLER_COLUMN_MAX_HEIGHT: u32 = 500;
 
 #[derive(Clone)]
 struct VarForUI {
@@ -48,12 +42,13 @@ impl ControlsPanel {
     pub fn new(
         hierarchy_and_time_table: Mutable<Option<HierarchyAndTimeTable>>,
         selected_var_refs: MutableVec<wellen::VarRef>,
+        layout: Mutable<Layout>,
     ) -> impl Element {
         Self {
             selected_scope_ref: <_>::default(),
             hierarchy_and_time_table,
             selected_var_refs,
-            layout: <_>::default(),
+            layout,
         }
         .root()
     }
@@ -71,16 +66,25 @@ impl ControlsPanel {
 
     fn root(&self) -> impl Element {
         let triggers = self.triggers();
+        let layout = self.layout.clone();
         let layout_and_hierarchy_signal = map_ref! {
-            let layout = self.layout.signal(),
+            let layout = layout.signal(),
             let hierarchy_and_time_table = self.hierarchy_and_time_table.signal_cloned() => {
                 (*layout, hierarchy_and_time_table.clone().map(|(hierarchy, _)| hierarchy))
             }
         };
         Column::new()
             .after_remove(move |_| drop(triggers))
-            .s(Height::fill())
-            .s(Width::fill())
+            .s(Width::with_signal_self(
+                self.layout
+                    .signal()
+                    .map(|layout| matches!(layout, Layout::Columns))
+                    .map_true(|| Width::fill()),
+            ))
+            .s(Height::with_signal_self(layout.signal().map(move |layout| match layout {
+                Layout::Tree => Height::fill(),
+                Layout::Columns => Height::fill().max(MILLER_COLUMN_MAX_HEIGHT),
+            })))
             .s(Scrollbars::both())
             .s(Padding::all(20))
             .s(Gap::new().y(40))
@@ -254,7 +258,7 @@ impl ControlsPanel {
                                 .s(Height::fill())
                                 // @TODO add `width: max-content` to MoonZoon's `Width`?
                                 .update_raw_el(|raw_el| raw_el.style("width", "max-content"))
-                                .on_viewport_size_change(move |width, _| viewport_x.set(i32::MAX))
+                                .on_viewport_size_change(move |_, _| viewport_x.set(i32::MAX))
                                 .items(scopes_for_ui_in_levels.into_iter().map(|scopes_in_level| {
                                     Column::new()
                                         .s(Height::fill())
@@ -396,7 +400,16 @@ impl ControlsPanel {
             )
             .on_hovered_change(move |is_hovered| hovered.set_neq(is_hovered))
             .on_press(move || match layout.get() {
-                Layout::Tree => scope_for_ui.expanded.update(not),
+                Layout::Tree => { 
+                    if scope_for_ui.expanded.get() {
+                        scope_for_ui.selected_scope_in_level.set(None);
+                    } else {
+                        scope_for_ui
+                            .selected_scope_in_level
+                            .set(Some(scope_for_ui.scope_ref));
+                    }
+                    scope_for_ui.expanded.update(not)
+                }
                 Layout::Columns => {
                     selected_scope_ref.set_neq(None);
                     if scope_for_ui.expanded.get() {
@@ -415,7 +428,6 @@ impl ControlsPanel {
         scope_for_ui: ScopeForUI,
         button_hovered: Mutable<bool>,
     ) -> impl Element {
-        let layout = self.layout.clone();
         Button::new()
             .s(Padding::new().x(15).y(5))
             .s(Font::new().wrap_anywhere())

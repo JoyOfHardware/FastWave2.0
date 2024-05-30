@@ -1,4 +1,5 @@
 use zoon::*;
+pub use js_bridge::PixiController;
 
 pub struct PixiCanvas {
     raw_el: RawHtmlEl<web_sys::HtmlElement>,
@@ -89,6 +90,7 @@ mod js_bridge {
     // Note: Add all corresponding methods to `frontend/typescript/pixi_canvas/pixi_canvas.ts`
     #[wasm_bindgen(module = "/typescript/bundles/pixi_canvas.js")]
     extern "C" {
+        #[derive(Clone)]
         pub type PixiController;
 
         // @TODO `row_height` and `row_gap` is FastWave-specific
