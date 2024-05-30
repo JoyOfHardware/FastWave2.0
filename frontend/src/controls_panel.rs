@@ -1,9 +1,9 @@
 use crate::tauri_bridge;
 use crate::HierarchyAndTimeTable;
+use futures_util::join;
 use std::mem;
 use std::ops::Not;
 use std::rc::Rc;
-use futures_util::join;
 use wellen::GetItem;
 use zoon::*;
 
@@ -71,6 +71,12 @@ impl ControlsPanel {
 
     fn root(&self) -> impl Element {
         let triggers = self.triggers();
+        let layout_and_hierarchy_signal = map_ref! {
+            let layout = self.layout.signal(),
+            let hierarchy_and_time_table = self.hierarchy_and_time_table.signal_cloned() => {
+                (*layout, hierarchy_and_time_table.clone().map(|(hierarchy, _)| hierarchy))
+            }
+        };
         Column::new()
             .after_remove(move |_| drop(triggers))
             .s(Height::fill())
@@ -92,11 +98,13 @@ impl ControlsPanel {
                     .signal_cloned()
                     .map_some(clone!((self => s) move |(hierarchy, _)| s.scopes_panel(hierarchy))),
             )
-            .item_signal(
-                self.hierarchy_and_time_table
-                    .signal_cloned()
-                    .map_some(clone!((self => s) move |(hierarchy, _)| s.vars_panel(hierarchy))),
-            )
+            .item_signal(layout_and_hierarchy_signal.map(
+                clone!((self => s) move |(layout, hierarchy)| {
+                    hierarchy.and_then(clone!((s) move |hierarchy| {
+                        matches!(layout, Layout::Tree).then(move || s.vars_panel(hierarchy))
+                    }))
+                }),
+            ))
     }
 
     fn load_button(&self, test_file_name: &'static str) -> impl Element {
@@ -130,7 +138,10 @@ impl ControlsPanel {
                 let hierarchy_and_time_table = hierarchy_and_time_table.clone();
                 Task::start(async move {
                     tauri_bridge::load_waveform(test_file_name).await;
-                    let (hierarchy, time_table) = join!(tauri_bridge::get_hierarchy(), tauri_bridge::get_time_table());
+                    let (hierarchy, time_table) = join!(
+                        tauri_bridge::get_hierarchy(),
+                        tauri_bridge::get_time_table()
+                    );
                     hierarchy_and_time_table.set(Some((Rc::new(hierarchy), Rc::new(time_table))))
                 })
             })
@@ -151,10 +162,12 @@ impl ControlsPanel {
                 Layout::Columns => "Tree",
             }))
             .on_hovered_change(move |is_hovered| hovered.set_neq(is_hovered))
-            .on_press(move || layout.update(|layout| match layout {
-                Layout::Tree => Layout::Columns,
-                Layout::Columns => Layout::Tree,
-            }))
+            .on_press(move || {
+                layout.update(|layout| match layout {
+                    Layout::Tree => Layout::Columns,
+                    Layout::Columns => Layout::Tree,
+                })
+            })
     }
 
     fn scopes_panel(&self, hierarchy: Rc<wellen::Hierarchy>) -> impl Element {
@@ -163,7 +176,12 @@ impl ControlsPanel {
             .s(Scrollbars::y_and_clip_x())
             .s(Gap::new().y(20))
             .s(Width::fill())
-            .item(El::new().child("Scopes"))
+            .item_signal(
+                self.layout
+                    .signal()
+                    .map(|layout| matches!(layout, Layout::Tree))
+                    .map_true(|| El::new().child("Scopes")),
+            )
             .item(self.scopes_list(hierarchy))
     }
 
@@ -174,7 +192,8 @@ impl ControlsPanel {
         for scope_ref in hierarchy.scopes() {
             let mut scope_refs = Vec::new();
             scope_refs.push((0, scope_ref, None));
-            let mut selected_scope_in_levels: Vec<Mutable<Option<wellen::ScopeRef>>> = vec![<_>::default()];
+            let mut selected_scope_in_levels: Vec<Mutable<Option<wellen::ScopeRef>>> =
+                vec![<_>::default()];
             while let Some((level, scope_ref, parent_expanded)) = scope_refs.pop() {
                 let scope = hierarchy.get(scope_ref);
                 let mut children = scope.scopes(&hierarchy).peekable();
@@ -250,8 +269,9 @@ impl ControlsPanel {
                                                 .into_iter()
                                                 .map(clone!((s) move |scope_for_ui| s.scope_button_row(scope_for_ui)))
                                         )
-                                })
-                        )).unify()
+                                }))
+                                .item(s.vars_panel(hierarchy.clone()))
+                        ).unify()
                 }
             }))
     }
@@ -283,7 +303,7 @@ impl ControlsPanel {
                 ))
             })
         };
-        let task_collapse_on_sibling_scope_selection = {
+        let task_expand_or_collapse_on_selected_scope_in_level_change = {
             let expanded = scope_for_ui.expanded.clone();
             let scope_ref = scope_for_ui.scope_ref;
             let layout = layout.clone();
@@ -291,10 +311,11 @@ impl ControlsPanel {
                 move |selected_scope_in_level| {
                     if matches!(layout.get(), Layout::Columns) {
                         if let Some(selected_scope) = selected_scope_in_level {
-                            if selected_scope != scope_ref {
-                                expanded.set_neq(false);
+                            if selected_scope == scope_ref {
+                                return expanded.set(true);
                             }
                         }
+                        expanded.set(false);
                     }
                 },
             ))
@@ -315,9 +336,9 @@ impl ControlsPanel {
                 Layout::Columns => 0,
             })))
             .s(Width::default().max(SCOPE_VAR_ROW_MAX_WIDTH))
-            .after_remove(move |_| { 
+            .after_remove(move |_| {
                 drop(task_collapse_on_parent_collapse);
-                drop(task_collapse_on_sibling_scope_selection);
+                drop(task_expand_or_collapse_on_selected_scope_in_level_change);
             })
             .child(
                 Row::new()
@@ -325,7 +346,7 @@ impl ControlsPanel {
                     .s(RoundedCorners::all(15))
                     .s(Clip::both())
                     .s(Align::new().left())
-                    .items_signal_vec(layout.signal().map(clone!((self => s, scope_for_ui) move |layout| { 
+                    .items_signal_vec(layout.signal().map(clone!((self => s, scope_for_ui) move |layout| {
                         let toggle = scope_for_ui.has_children.then(clone!((s, scope_for_ui) move || s.scope_toggle(scope_for_ui)));
                         let button = s.scope_button(scope_for_ui.clone(), button_hovered.clone());
                         match layout {
@@ -337,39 +358,55 @@ impl ControlsPanel {
     }
 
     fn scope_toggle(&self, scope_for_ui: ScopeForUI) -> impl Element {
+        let layout = self.layout.clone();
         let expanded = scope_for_ui.expanded.clone();
         let layout_and_expanded = map_ref! {
-            let layout = self.layout.signal(),
+            let layout = layout.signal(),
             let expanded = expanded.signal() => (*layout, *expanded)
         };
+        let selected_scope_ref: Mutable<Option<wellen::ScopeRef>> = self.selected_scope_ref.clone();
         let (hovered, hovered_signal) = Mutable::new_and_signal(false);
         Button::new()
             .s(Padding::new()
-                .left_signal(self.layout.signal().map(|layout| matches!(layout, Layout::Tree)).map_true(|| 10))
-                .right_signal(self.layout.signal().map(|layout| matches!(layout, Layout::Columns)).map_true(|| 10))
-            )
+                .left_signal(
+                    self.layout
+                        .signal()
+                        .map(|layout| matches!(layout, Layout::Tree))
+                        .map_true(|| 10),
+                )
+                .right_signal(
+                    self.layout
+                        .signal()
+                        .map(|layout| matches!(layout, Layout::Columns))
+                        .map_true(|| 10),
+                ))
             .s(Height::fill())
             .s(Font::new().color_signal(hovered_signal.map_true(|| color!("LightBlue"))))
             .label(
                 El::new()
-                    .s(Transform::with_signal_self(layout_and_expanded.map(|(layout, expanded)| {
-                        match layout {
+                    .s(Transform::with_signal_self(layout_and_expanded.map(
+                        |(layout, expanded)| match layout {
                             Layout::Tree => expanded.not().then(|| Transform::new().rotate(-90)),
-                            Layout::Columns => Some(Transform::new().rotate(if expanded { -90 } else { 90 } ))
-                        }
-                    })
-                    ))
+                            Layout::Columns => {
+                                Some(Transform::new().rotate(if expanded { -90 } else { 90 }))
+                            }
+                        },
+                    )))
                     .child("▼"),
             )
             .on_hovered_change(move |is_hovered| hovered.set_neq(is_hovered))
-            .on_press(move || { 
-                scope_for_ui.expanded.update(not);
-                if let Some(selected_scope_in_level) = scope_for_ui.selected_scope_in_level.get() {
-                    if selected_scope_in_level == scope_for_ui.scope_ref {
-                        return scope_for_ui.selected_scope_in_level.set(None);
+            .on_press(move || match layout.get() {
+                Layout::Tree => scope_for_ui.expanded.update(not),
+                Layout::Columns => {
+                    selected_scope_ref.set_neq(None);
+                    if scope_for_ui.expanded.get() {
+                        scope_for_ui.selected_scope_in_level.set(None);
+                    } else {
+                        scope_for_ui
+                            .selected_scope_in_level
+                            .set(Some(scope_for_ui.scope_ref));
                     }
                 }
-                scope_for_ui.selected_scope_in_level.set(Some(scope_for_ui.scope_ref));
             })
     }
 
@@ -383,7 +420,12 @@ impl ControlsPanel {
             .s(Padding::new().x(15).y(5))
             .s(Font::new().wrap_anywhere())
             .on_hovered_change(move |is_hovered| button_hovered.set_neq(is_hovered))
-            .on_press(clone!((self.selected_scope_ref => selected_scope_ref, scope_for_ui.scope_ref => scope_ref) move || selected_scope_ref.set_neq(Some(scope_ref))))
+            .on_press(
+                clone!((self.selected_scope_ref => selected_scope_ref, scope_for_ui) move || {
+                    selected_scope_ref.set_neq(Some(scope_for_ui.scope_ref));
+                    scope_for_ui.selected_scope_in_level.set_neq(None);
+                }),
+            )
             .label(scope_for_ui.name)
     }
 
@@ -393,13 +435,18 @@ impl ControlsPanel {
             .s(Gap::new().y(20))
             .s(Height::fill().min(150))
             .s(Scrollbars::y_and_clip_x())
-            .item(El::new().child("Variables"))
+            .item_signal(
+                self.layout
+                    .signal()
+                    .map(|layout| matches!(layout, Layout::Tree))
+                    .map_true(|| El::new().child("Variables")),
+            )
             .item_signal(selected_scope_ref.signal().map_some(
                 clone!((self => s) move |scope_ref| s.vars_list(scope_ref, hierarchy.clone())),
             ))
     }
 
-    // @TODO Group variables
+    // @TODO Group variables?
     fn vars_list(
         &self,
         selected_scope_ref: wellen::ScopeRef,
@@ -442,6 +489,12 @@ impl ControlsPanel {
             }));
 
         Column::new()
+            .s(Width::with_signal_self(
+                self.layout
+                    .signal()
+                    .map(|layout| matches!(layout, Layout::Columns))
+                    .map_true(|| Width::default().min(SCOPE_VAR_ROW_MAX_WIDTH)),
+            ))
             .s(Align::new().left())
             .s(Gap::new().y(10))
             .s(Height::fill())
