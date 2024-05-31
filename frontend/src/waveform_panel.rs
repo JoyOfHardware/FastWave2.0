@@ -1,6 +1,6 @@
 use crate::{tauri_bridge, HierarchyAndTimeTable};
 use wellen::GetItem;
-use zoon::*;
+use zoon::{eprintln, *};
 
 mod pixi_canvas;
 use pixi_canvas::{PixiCanvas, PixiController};
@@ -29,7 +29,7 @@ impl WaveformPanel {
     fn root(&self) -> impl Element {
         let selected_vars_panel_height_getter: Mutable<u32> = <_>::default();
         Row::new()
-            .s(Padding::all(20).left(0))
+            .s(Padding::all(20))
             .s(Scrollbars::y_and_clip_x())
             .s(Width::growable())
             .s(Height::fill())
@@ -67,7 +67,7 @@ impl WaveformPanel {
                 })).for_each(clone!((controller, hierarchy_and_time_table) move |vec_diff| {
                     clone!((controller, hierarchy_and_time_table) async move {
                         match vec_diff {
-                            VecDiff::Replace { values } => { 
+                            VecDiff::Replace { values } => {
                                 let controller = controller.wait_for_some_cloned().await;
                                 controller.clear_vars();
                                 for var_ref in values {
@@ -104,23 +104,38 @@ impl WaveformPanel {
     }
 
     async fn push_var(
-        controller: &PixiController, 
+        controller: &PixiController,
         hierarchy_and_time_table: &Mutable<Option<HierarchyAndTimeTable>>,
         var_ref: wellen::VarRef,
     ) {
         let (hierarchy, time_table) = hierarchy_and_time_table.get_cloned().unwrap();
+        if time_table.is_empty() {
+            eprintln!("timetable is empty");
+            return;
+        }
+        let last_time = time_table.last().copied().unwrap_throw();
+
         let var = hierarchy.get(var_ref);
         let signal_ref = var.signal_ref();
         let signal = tauri_bridge::load_and_get_signal(signal_ref).await;
 
         let timescale = hierarchy.timescale();
+        // @TODO remove
         zoon::println!("{timescale:?}");
 
-        // Note: Sync `timeline`'s type with the `Timeline` in `frontend/typescript/pixi_canvas/pixi_canvas.ts'
-        let mut timeline: Vec<(wellen::Time, Option<String>)> = time_table.iter().map(|time| (*time, None)).collect();
-        for (time_index, signal_value) in signal.iter_changes() {
-            timeline[time_index as usize].1 = Some(signal_value.to_string());
+        let mut timeline: Vec<(wellen::Time, String)> = signal
+            .iter_changes()
+            .map(|(time_index, signal_value)| {
+                (time_table[time_index as usize], signal_value.to_string())
+            })
+            .collect();
+        if timeline.is_empty() {
+            eprintln!("timeline is empty");
+            return;
         }
+        timeline.push((last_time, timeline.last().cloned().unwrap_throw().1));
+
+        // Note: Sync `timeline`'s type with the `Timeline` in `frontend/typescript/pixi_canvas/pixi_canvas.ts'
         controller.push_var(serde_wasm_bindgen::to_value(&timeline).unwrap_throw());
     }
 

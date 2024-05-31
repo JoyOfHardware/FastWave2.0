@@ -81,10 +81,12 @@ impl ControlsPanel {
                     .map(|layout| matches!(layout, Layout::Columns))
                     .map_true(|| Width::fill()),
             ))
-            .s(Height::with_signal_self(layout.signal().map(move |layout| match layout {
-                Layout::Tree => Height::fill(),
-                Layout::Columns => Height::fill().max(MILLER_COLUMN_MAX_HEIGHT),
-            })))
+            .s(Height::with_signal_self(layout.signal().map(
+                move |layout| match layout {
+                    Layout::Tree => Height::fill(),
+                    Layout::Columns => Height::fill().max(MILLER_COLUMN_MAX_HEIGHT),
+                },
+            )))
             .s(Scrollbars::both())
             .s(Padding::all(20))
             .s(Gap::new().y(40))
@@ -400,7 +402,7 @@ impl ControlsPanel {
             )
             .on_hovered_change(move |is_hovered| hovered.set_neq(is_hovered))
             .on_press(move || match layout.get() {
-                Layout::Tree => { 
+                Layout::Tree => {
                     if scope_for_ui.expanded.get() {
                         scope_for_ui.selected_scope_in_level.set(None);
                     } else {

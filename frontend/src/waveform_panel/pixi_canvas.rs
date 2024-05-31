@@ -1,5 +1,5 @@
-use zoon::*;
 pub use js_bridge::PixiController;
+use zoon::*;
 
 pub struct PixiCanvas {
     raw_el: RawHtmlEl<web_sys::HtmlElement>,

@@ -2,7 +2,10 @@ import { Application, Text, Graphics, Container, TextStyle } from "pixi.js";
 
 type Time = number;
 type BitString = string;
-type Timeline = Array<[Time, BitString | undefined]>;
+type Timeline = Array<[Time, BitString]>;
+
+type X = number;
+type TimelineForUI = Array<[X, string]>;
 
 export class PixiController {
     app: Application
@@ -72,15 +75,18 @@ export class PixiController {
 }
 
 class VarSignalRow {
-    timeline: Timeline;
     app: Application;
+    timeline: Timeline;
+    last_time: Time;
+    formatter: (signal_value: BitString) => string;
+    timeline_for_ui: TimelineForUI;
     owner: Array<VarSignalRow>;
     index_in_owner: number;
     rows_container: Container;
     row_height: number;
     row_gap: number;
     row_height_with_gap: number;
-    renderer_resize_callback = () => this.draw();
+    renderer_resize_callback = () => this.redraw_on_canvas_resize();
     // -- elements --
     row_container = new Container();
     signal_blocks_container = new Container();
@@ -93,10 +99,16 @@ class VarSignalRow {
         row_height: number,
         row_gap: number,
     ) {
-        console.log("VarSignalRow timeline:", timeline);
-        this.timeline = timeline;
-
         this.app = app;
+
+        this.timeline = timeline;
+        this.last_time = timeline[timeline.length - 1][0];
+        this.formatter = signal_value => parseInt(signal_value, 2).toString(16);
+
+        this.timeline_for_ui = this.timeline.map(([time, value]) => {
+            const x = time / this.last_time * this.app.screen.width;
+            return [x, this.formatter(value)]
+        });
 
         this.row_height = row_height;
         this.row_gap = row_gap;
@@ -107,64 +119,82 @@ class VarSignalRow {
         this.owner.push(this);
 
         this.rows_container = rows_container;
-        this.create_element_tree();
 
         this.draw();
         this.app.renderer.on("resize", this.renderer_resize_callback);
     }
 
-    create_element_tree() {
+    draw() {
         // row_container
         this.row_container.y = this.index_in_owner * this.row_height_with_gap;
         this.rows_container.addChild(this.row_container);
 
         // signal_block_container
         this.row_container.addChild(this.signal_blocks_container);
+
+        const label_style = new TextStyle({
+            align: "center",
+            fill: "White",
+            fontSize: 16,
+            fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"',
+        });
+
+        this.timeline_for_ui.forEach(([x, value], index) => {
+            if (index == this.timeline_for_ui.length - 1) {
+                return;
+            }
+            const block_width = this.timeline_for_ui[index+1][0] - x;
+            const block_height = this.row_height;
+
+            // signal_block
+            const signal_block = new Container();
+            signal_block.x = x;
+            this.signal_blocks_container.addChild(signal_block);
+
+            // background
+            const background = new Graphics()
+                .roundRect(0, 0, block_width, block_height, 15)
+                .fill("SlateBlue");
+            background.label = "background";
+            signal_block.addChild(background);
+
+            // label
+            const label = new Text({ text: value, style: label_style });
+            label.x = (block_width - label.width) / 2;
+            label.y = (block_height - label.height) / 2;
+            label.visible = label.width < block_width;
+            label.label = "label";
+            signal_block.addChild(label);
+        })
     }
 
-    draw() {
-        if (this.timeline.length > 0) {
-            const last_time = this.timeline[this.timeline.length - 1][0];
-            // @TODO make formatter configurable
-            const formatter: (signal_value: BitString) => string = signal_value => parseInt(signal_value, 2).toString(16); 
-            // @TODO optimize - one pass, partly in Rust, partly outside of `draw()`, etc.
-            const timeline: Array<[number, string | undefined]> = this.timeline.map(([time, value]) => {
-                const x = time / last_time * this.app.screen.width;
-                const formatted_value = typeof value === 'string' ? formatter(value) : undefined;
-                return [x, formatted_value]
-            });
-            // @TODO optimize - don't recreate all on every draw
-            this.signal_blocks_container.removeChildren();
-            timeline.forEach(([x, value], index) => {
-                if (typeof value === 'string') {
-                    const block_width = timeline[index+1][0] - x;
-                    const block_height = this.row_height;
-
-                    // signal_block
-                    const signal_block = new Container({x});
-                    this.signal_blocks_container.addChild(signal_block);
-
-                    // background
-                    let background = new Graphics()
-                        .roundRect(0, 0, block_width, block_height, 15)
-                        .fill("SlateBlue");
-                    signal_block.addChild(background);
-
-                    // label
-                    let style = new TextStyle({
-                        align: "center",
-                        fill: "White",
-                        fontSize: 16,
-                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"',
-                    });
-                    // @TODO don't show when the label is wider/higher than the block
-                    let label = new Text({ text: value, style });
-                    label.x = (block_width - label.width) / 2;
-                    label.y = (block_height - label.height) / 2;
-                    signal_block.addChild(label);
-                }
-            })
+    redraw_on_canvas_resize() {
+        for (let index = 0; index < this.timeline_for_ui.length; index++) {
+            const x = this.timeline[index][0] / this.last_time * this.app.screen.width;
+            this.timeline_for_ui[index][0] = x;
         }
+        this.timeline_for_ui.forEach(([x, _value], index) => {
+            if (index == this.timeline_for_ui.length - 1) {
+                return;
+            }
+
+            const block_width = this.timeline_for_ui[index+1][0] - x;
+            const block_height = this.row_height;
+
+            // signal_block
+            const signal_block = this.signal_blocks_container.getChildAt(index);
+            signal_block.x = x;
+
+            // background
+            const background = signal_block.getChildByLabel("background")!;
+            background.width = block_width;
+
+            // label
+            const label = signal_block.getChildByLabel("label")!;
+            label.x = (block_width - label.width) / 2;
+            label.y = (block_height - label.height) / 2;
+            label.visible = label.width < block_width;
+        })
     }
 
     decrement_index() {

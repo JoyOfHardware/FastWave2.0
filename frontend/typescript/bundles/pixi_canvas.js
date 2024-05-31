@@ -35183,22 +35183,30 @@ var PixiController = class {
   }
 };
 var VarSignalRow = class {
-  timeline;
   app;
+  timeline;
+  last_time;
+  formatter;
+  timeline_for_ui;
   owner;
   index_in_owner;
   rows_container;
   row_height;
   row_gap;
   row_height_with_gap;
-  renderer_resize_callback = () => this.draw();
+  renderer_resize_callback = () => this.redraw_on_canvas_resize();
   // -- elements --
   row_container = new Container();
   signal_blocks_container = new Container();
   constructor(timeline, app, owner, rows_container, row_height, row_gap) {
-    console.log("VarSignalRow timeline:", timeline);
-    this.timeline = timeline;
     this.app = app;
+    this.timeline = timeline;
+    this.last_time = timeline[timeline.length - 1][0];
+    this.formatter = (signal_value) => parseInt(signal_value, 2).toString(16);
+    this.timeline_for_ui = this.timeline.map(([time, value]) => {
+      const x2 = time / this.last_time * this.app.screen.width;
+      return [x2, this.formatter(value)];
+    });
     this.row_height = row_height;
     this.row_gap = row_gap;
     this.row_height_with_gap = row_height + row_gap;
@@ -35206,46 +35214,59 @@ var VarSignalRow = class {
     this.owner = owner;
     this.owner.push(this);
     this.rows_container = rows_container;
-    this.create_element_tree();
     this.draw();
     this.app.renderer.on("resize", this.renderer_resize_callback);
   }
-  create_element_tree() {
+  draw() {
     this.row_container.y = this.index_in_owner * this.row_height_with_gap;
     this.rows_container.addChild(this.row_container);
     this.row_container.addChild(this.signal_blocks_container);
+    const label_style = new TextStyle({
+      align: "center",
+      fill: "White",
+      fontSize: 16,
+      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"'
+    });
+    this.timeline_for_ui.forEach(([x2, value], index) => {
+      if (index == this.timeline_for_ui.length - 1) {
+        return;
+      }
+      const block_width = this.timeline_for_ui[index + 1][0] - x2;
+      const block_height = this.row_height;
+      const signal_block = new Container();
+      signal_block.x = x2;
+      this.signal_blocks_container.addChild(signal_block);
+      const background = new Graphics().roundRect(0, 0, block_width, block_height, 15).fill("SlateBlue");
+      background.label = "background";
+      signal_block.addChild(background);
+      const label = new Text({ text: value, style: label_style });
+      label.x = (block_width - label.width) / 2;
+      label.y = (block_height - label.height) / 2;
+      label.visible = label.width < block_width;
+      label.label = "label";
+      signal_block.addChild(label);
+    });
   }
-  draw() {
-    if (this.timeline.length > 0) {
-      const last_time = this.timeline[this.timeline.length - 1][0];
-      const formatter = (signal_value) => parseInt(signal_value, 2).toString(16);
-      const timeline = this.timeline.map(([time, value]) => {
-        const x2 = time / last_time * this.app.screen.width;
-        const formatted_value = typeof value === "string" ? formatter(value) : void 0;
-        return [x2, formatted_value];
-      });
-      this.signal_blocks_container.removeChildren();
-      timeline.forEach(([x2, value], index) => {
-        if (typeof value === "string") {
-          const block_width = timeline[index + 1][0] - x2;
-          const block_height = this.row_height;
-          const signal_block = new Container({ x: x2 });
-          this.signal_blocks_container.addChild(signal_block);
-          let background = new Graphics().roundRect(0, 0, block_width, block_height, 15).fill("SlateBlue");
-          signal_block.addChild(background);
-          let style = new TextStyle({
-            align: "center",
-            fill: "White",
-            fontSize: 16,
-            fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"'
-          });
-          let label = new Text({ text: value, style });
-          label.x = (block_width - label.width) / 2;
-          label.y = (block_height - label.height) / 2;
-          signal_block.addChild(label);
-        }
-      });
+  redraw_on_canvas_resize() {
+    for (let index = 0; index < this.timeline_for_ui.length; index++) {
+      const x2 = this.timeline[index][0] / this.last_time * this.app.screen.width;
+      this.timeline_for_ui[index][0] = x2;
     }
+    this.timeline_for_ui.forEach(([x2, _value], index) => {
+      if (index == this.timeline_for_ui.length - 1) {
+        return;
+      }
+      const block_width = this.timeline_for_ui[index + 1][0] - x2;
+      const block_height = this.row_height;
+      const signal_block = this.signal_blocks_container.getChildAt(index);
+      signal_block.x = x2;
+      const background = signal_block.getChildByLabel("background");
+      background.width = block_width;
+      const label = signal_block.getChildByLabel("label");
+      label.x = (block_width - label.width) / 2;
+      label.y = (block_height - label.height) / 2;
+      label.visible = label.width < block_width;
+    });
   }
   decrement_index() {
     this.index_in_owner--;
