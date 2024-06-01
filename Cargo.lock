@@ -1182,6 +1182,7 @@ version = "0.1.0"
 dependencies = [
  "serde",
  "serde_json",
+ "shared",
  "tauri",
  "tauri-build",
  "tauri-plugin-window-state",
@@ -1263,6 +1264,7 @@ dependencies = [
 name = "frontend"
 version = "0.1.0"
 dependencies = [
+ "shared",
  "wasm-bindgen-test",
  "wellen",
  "zoon",
@@ -3753,6 +3755,9 @@ dependencies = [
 [[package]]
 name = "shared"
 version = "0.1.0"
+dependencies = [
+ "wellen",
+]
 
 [[package]]
 name = "signal-hook-registry"

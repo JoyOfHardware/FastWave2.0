@@ -1,7 +1,7 @@
 use std::rc::Rc;
 use zoon::*;
 
-mod tauri_bridge;
+mod platform;
 
 mod controls_panel;
 use controls_panel::ControlsPanel;
@@ -23,7 +23,7 @@ fn main() {
     Task::start(async {
         // https://github.com/tauri-apps/tauri/issues/5170
         Timer::sleep(100).await;
-        tauri_bridge::show_window().await;
+        platform::show_window().await;
     });
 }
 

@@ -1,5 +1,4 @@
-use crate::tauri_bridge;
-use crate::{HierarchyAndTimeTable, Layout};
+use crate::{platform, HierarchyAndTimeTable, Layout};
 use futures_util::join;
 use std::mem;
 use std::ops::Not;
@@ -143,10 +142,10 @@ impl ControlsPanel {
                 drop(hierarchy_and_time_table_lock);
                 let hierarchy_and_time_table = hierarchy_and_time_table.clone();
                 Task::start(async move {
-                    tauri_bridge::load_waveform(test_file_name).await;
+                    platform::load_waveform(test_file_name).await;
                     let (hierarchy, time_table) = join!(
-                        tauri_bridge::get_hierarchy(),
-                        tauri_bridge::get_time_table()
+                        platform::get_hierarchy(),
+                        platform::get_time_table()
                     );
                     hierarchy_and_time_table.set(Some((Rc::new(hierarchy), Rc::new(time_table))))
                 })
