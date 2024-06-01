@@ -1,7 +1,7 @@
+use shared::wellen_helpers;
 use std::rc::Rc;
 use std::sync::Mutex;
 use wellen::simple::Waveform;
-use shared::wellen_helpers;
 
 #[derive(Default)]
 struct Store {

@@ -143,10 +143,8 @@ impl ControlsPanel {
                 let hierarchy_and_time_table = hierarchy_and_time_table.clone();
                 Task::start(async move {
                     platform::load_waveform(test_file_name).await;
-                    let (hierarchy, time_table) = join!(
-                        platform::get_hierarchy(),
-                        platform::get_time_table()
-                    );
+                    let (hierarchy, time_table) =
+                        join!(platform::get_hierarchy(), platform::get_time_table());
                     hierarchy_and_time_table.set(Some((Rc::new(hierarchy), Rc::new(time_table))))
                 })
             })

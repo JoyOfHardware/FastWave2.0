@@ -14,8 +14,3 @@ wasm-bindgen-test = "0.3.19"
 shared.workspace = true
 zoon.workspace = true
 wellen.workspace = true
-
-[features]
-platform_browser = []
-platform_tauri = []
-

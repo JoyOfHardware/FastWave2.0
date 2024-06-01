@@ -1,7 +1,7 @@
-use zoon::*;
+use shared::wellen_helpers;
 use std::sync::Mutex;
 use wellen::simple::Waveform;
-use shared::wellen_helpers;
+use zoon::*;
 
 #[derive(Default)]
 struct Store {

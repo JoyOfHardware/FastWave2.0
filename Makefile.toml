@@ -29,11 +29,11 @@ run_task = { fork = true, parallel = true, name = [
     "watch_tauri_glue",
 ]}
 
-[tasks.start_web]
+[tasks.start_browser]
 description = "Run without Tauri in the browser & watch Typescript and Rust in the debug mode"
 dependencies = ["store_current_process_id"]
 run_task = { fork = true, parallel = true, name = [
-    "tauri_dev_with_cleanup", 
+    "mzoon_start_with_cleanup", 
     "watch_pixi_canvas",
     "watch_tauri_glue",
 ]}
@@ -56,12 +56,14 @@ command = "tauri/bin/cargo-tauri"
 args = ["${@}"]
 
 [tasks.mzoon_for_tauri]
-description = "Run locally installed mzoon with enabled `frontend` feature `platform_tauri"
-extend = "mzoon_with_disabled_frontend_features"
+description = "Run locally installed mzoon with env var FASTWAVE_PLATFORM=TAURI"
+extend = "mzoon_without_env_var_fastwave_platform"
+env = { FASTWAVE_PLATFORM = "TAURI" }
 
 [tasks.mzoon]
-description = "Run locally installed mzoon with enabled `frontend` feature `platform_browser"
-extend = "mzoon_with_disabled_frontend_features"
+description = "Run locally installed mzoon with env var FASTWAVE_PLATFORM=BROWSER"
+extend = "mzoon_without_env_var_fastwave_platform"
+env = { FASTWAVE_PLATFORM = "BROWSER" }
 
 # [tasks.mzoon]
 # description = "Run mzoon from a cloned MoonZoon repo"
@@ -70,7 +72,7 @@ extend = "mzoon_with_disabled_frontend_features"
 
 ######  HELPER TASKS  ######
 
-[tasks.mzoon_with_disabled_frontend_features]
+[tasks.mzoon_without_env_var_fastwave_platform]
 description = "Run locally installed mzoo"
 command = "mzoon/bin/mzoon"
 args = ["${@}"]

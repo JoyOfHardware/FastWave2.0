@@ -1,15 +1,15 @@
-#[cfg(feature = "platform_tauri")]
+// @TODO maybe rewrite `FASTWAVE_PLATFORM` to features once it's possible to set them through env vars:
+// https://github.com/rust-lang/cargo/issues/4829
+
+#[cfg(FASTWAVE_PLATFORM = "TAURI")]
 mod tauri;
-#[cfg(feature = "platform_tauri")]
+#[cfg(FASTWAVE_PLATFORM = "TAURI")]
 use tauri as platform;
 
-#[cfg(feature = "platform_browser")]
+#[cfg(FASTWAVE_PLATFORM = "BROWSER")]
 mod browser;
-#[cfg(feature = "platform_browser")]
+#[cfg(FASTWAVE_PLATFORM = "BROWSER")]
 use browser as platform;
-
-#[cfg(all(feature = "platform_tauri", feature = "platform_browser"))]
-compile_error!("feature \"foo\" and feature \"bar\" cannot be enabled at the same time");
 
 pub async fn show_window() {
     platform::show_window().await
