@@ -5,8 +5,8 @@
   "build": {
     "frontendDist": "../frontend_dist",
     "devUrl": "http://localhost:8080",
-    "beforeDevCommand": "makers mzoon start",
-    "beforeBuildCommand": "makers mzoon build -r -f"
+    "beforeDevCommand": "makers mzoon_for_tauri start",
+    "beforeBuildCommand": "makers mzoon_for_tauri build -r -f"
   },
   "app": {
     "macOSPrivateApi": true,

@@ -8,6 +8,9 @@ mod browser;
 #[cfg(feature = "platform_browser")]
 use browser as platform;
 
+#[cfg(all(feature = "platform_tauri", feature = "platform_browser"))]
+compile_error!("feature \"foo\" and feature \"bar\" cannot be enabled at the same time");
+
 pub async fn show_window() {
     platform::show_window().await
 }
