@@ -43,7 +43,8 @@ description = "Compile in the release mode and create installation packages"
 dependencies = ["tauri_build", "show_release_paths"]
 
 # @TODO Write task `bundle_browser` once we know whether we need only the frontend
-# or also the backend side (Moon server)
+# or also the backend side (Moon server).
+# (Don't forget to add the task to the main README.md)
 
 # @TODO: Format also Typescript and CSS
 [tasks.format]
