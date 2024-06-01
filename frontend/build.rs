@@ -16,7 +16,8 @@ macro_rules! instruction {
 // }
 
 fn main() {
-    let default_platform = "BROWSER";
+    let default_platform = "TAURI";
     let platform = env::var("FASTWAVE_PLATFORM").unwrap_or_else(|_| default_platform.to_owned());
     instruction!("cargo:rustc-cfg=FASTWAVE_PLATFORM=\"{platform}\"");
+    instruction!("cargo:rerun-if-env-changed=FASTWAVE_PLATFORM");
 }
