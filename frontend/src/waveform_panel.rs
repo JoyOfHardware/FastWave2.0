@@ -1,4 +1,4 @@
-use crate::{tauri_bridge, HierarchyAndTimeTable};
+use crate::{platform, HierarchyAndTimeTable};
 use wellen::GetItem;
 use zoon::{eprintln, *};
 
@@ -61,7 +61,7 @@ impl WaveformPanel {
                 selected_var_refs.signal_vec().delay_remove(clone!((hierarchy_and_time_table) move |var_ref| {
                     clone!((var_ref, hierarchy_and_time_table) async move {
                         if let Some(hierarchy_and_time_table) = hierarchy_and_time_table.get_cloned() {
-                            tauri_bridge::unload_signal(hierarchy_and_time_table.0.get(var_ref).signal_ref()).await;
+                            platform::unload_signal(hierarchy_and_time_table.0.get(var_ref).signal_ref()).await;
                         }
                     })
                 })).for_each(clone!((controller, hierarchy_and_time_table) move |vec_diff| {
@@ -117,7 +117,7 @@ impl WaveformPanel {
 
         let var = hierarchy.get(var_ref);
         let signal_ref = var.signal_ref();
-        let signal = tauri_bridge::load_and_get_signal(signal_ref).await;
+        let signal = platform::load_and_get_signal(signal_ref).await;
 
         let timescale = hierarchy.timescale();
         // @TODO remove

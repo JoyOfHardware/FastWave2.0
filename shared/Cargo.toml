@@ -6,3 +6,6 @@ repository.workspace = true
 authors.workspace = true
 readme.workspace = true
 publish.workspace = true
+
+[dependencies]
+wellen.workspace = true

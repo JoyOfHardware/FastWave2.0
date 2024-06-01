@@ -1,27 +1,27 @@
 use zoon::*;
 
-pub async fn show_window() {
+pub(super) async fn show_window() {
     tauri_glue::show_window().await
 }
 
-pub async fn load_waveform(test_file_name: &'static str) {
+pub(super) async fn load_waveform(test_file_name: &'static str) {
     tauri_glue::load_waveform(test_file_name).await
 }
 
-pub async fn get_hierarchy() -> wellen::Hierarchy {
+pub(super) async fn get_hierarchy() -> wellen::Hierarchy {
     serde_wasm_bindgen::from_value(tauri_glue::get_hierarchy().await).unwrap_throw()
 }
 
-pub async fn get_time_table() -> wellen::TimeTable {
+pub(super) async fn get_time_table() -> wellen::TimeTable {
     serde_wasm_bindgen::from_value(tauri_glue::get_time_table().await).unwrap_throw()
 }
 
-pub async fn load_and_get_signal(signal_ref: wellen::SignalRef) -> wellen::Signal {
+pub(super) async fn load_and_get_signal(signal_ref: wellen::SignalRef) -> wellen::Signal {
     serde_wasm_bindgen::from_value(tauri_glue::load_and_get_signal(signal_ref.index()).await)
         .unwrap_throw()
 }
 
-pub async fn unload_signal(signal_ref: wellen::SignalRef) {
+pub(super) async fn unload_signal(signal_ref: wellen::SignalRef) {
     tauri_glue::unload_signal(signal_ref.index()).await
 }
 
