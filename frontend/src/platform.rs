@@ -1,6 +1,8 @@
 // @TODO maybe rewrite `FASTWAVE_PLATFORM` to features once it's possible to set them through env vars:
 // https://github.com/rust-lang/cargo/issues/4829
 
+// NOTE: `FASTWAVE_PLATFORM` is set in `Makefile.toml` tasks and then in `build.rs`
+
 #[cfg(FASTWAVE_PLATFORM = "TAURI")]
 mod tauri;
 #[cfg(FASTWAVE_PLATFORM = "TAURI")]

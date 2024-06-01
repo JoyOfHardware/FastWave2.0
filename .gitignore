@@ -7,3 +7,4 @@ frontend_dist/_api
 frontend_dist/index.html
 mzoon
 tauri
+!.vscode
