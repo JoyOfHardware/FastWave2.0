@@ -13,12 +13,15 @@ mod browser;
 #[cfg(FASTWAVE_PLATFORM = "BROWSER")]
 use browser as platform;
 
+type Filename = String;
+
 pub async fn show_window() {
     platform::show_window().await
 }
 
-pub async fn load_waveform(test_file_name: &'static str) {
-    platform::load_waveform(test_file_name).await
+// @TODO allow only support file types
+pub async fn pick_and_load_waveform() -> Option<Filename> {
+    platform::pick_and_load_waveform().await
 }
 
 pub async fn get_hierarchy() -> wellen::Hierarchy {
