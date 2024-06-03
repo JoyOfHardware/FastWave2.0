@@ -1,7 +1,7 @@
 use shared::wellen_helpers;
 use std::sync::Mutex;
 use wellen::simple::Waveform;
-use zoon::*;
+use zoon::{println, *};
 
 #[derive(Default)]
 struct Store {
@@ -12,19 +12,40 @@ static STORE: Lazy<Store> = lazy::default();
 
 pub(super) async fn show_window() {}
 
-pub(super) async fn load_waveform(test_file_name: &'static str) {
-    static SIMPLE_VCD: &'static [u8; 311] = include_bytes!("../../../test_files/simple.vcd");
-    // static WAVE_27_FST: &'static [u8; 28860652] = include_bytes!("../../../test_files/wave_27.fst");
-    let chosen_file = match test_file_name {
-        "simple.vcd" => SIMPLE_VCD.to_vec(),
-        // "wave_27.fst" => WAVE_27_FST.to_vec(),
-        test_file_name => todo!("add {test_file_name} to the `test_files` folder"),
+pub(super) async fn pick_and_load_waveform() -> Option<super::Filename> {
+    let file_handles_promise = window().show_open_file_picker().expect_throw(
+        "failed to open file picker (browser has to support `showOpenFilePicker` and use HTTPS",
+    );
+    let file_handles = JsFuture::from(file_handles_promise).await;
+    let file_handles = match file_handles {
+        Ok(file_handles) => file_handles.dyn_into::<js_sys::Array>().unwrap_throw(),
+        Err(error) => {
+            println!("file picker error: {error:?}");
+            return None;
+        }
     };
-    let waveform = wellen_helpers::read_from_bytes(chosen_file);
+    let file_handle = file_handles
+        .at(0)
+        .dyn_into::<web_sys::FileSystemFileHandle>()
+        .unwrap_throw();
+
+    let file = JsFuture::from(file_handle.get_file())
+        .await
+        .unwrap_throw()
+        .dyn_into::<web_sys::File>()
+        .unwrap_throw();
+
+    let file = gloo_file::File::from(file);
+    let content = gloo_file::futures::read_as_bytes(&file)
+        .await
+        .unwrap_throw();
+
+    let waveform = wellen_helpers::read_from_bytes(content);
     let Ok(waveform) = waveform else {
-        panic!("VCD file reading failed")
+        panic!("Waveform file reading failed")
     };
     *STORE.waveform.lock().unwrap_throw() = Some(waveform);
+    Some(file.name())
 }
 
 pub(super) async fn get_hierarchy() -> wellen::Hierarchy {

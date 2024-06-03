@@ -4,7 +4,7 @@
   "identifier": "com.fastwave",
   "build": {
     "frontendDist": "../frontend_dist",
-    "devUrl": "http://localhost:8080",
+    "devUrl": "https://localhost:8443",
     "beforeDevCommand": "makers mzoon_for_tauri start",
     "beforeBuildCommand": "makers mzoon_for_tauri build -r -f"
   },

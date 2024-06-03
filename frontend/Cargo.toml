@@ -14,3 +14,5 @@ wasm-bindgen-test = "0.3.19"
 shared.workspace = true
 zoon.workspace = true
 wellen.workspace = true
+web-sys = { version = "*", features = ["FileSystemFileHandle"] }
+gloo-file = { version = "0.3.0", features = ["futures"] }

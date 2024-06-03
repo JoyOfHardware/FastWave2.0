@@ -1,7 +1,8 @@
-use shared::wellen_helpers;
-use std::rc::Rc;
 use std::sync::Mutex;
+use tauri_plugin_dialog::DialogExt;
 use wellen::simple::Waveform;
+
+type Filename = String;
 
 #[derive(Default)]
 struct Store {
@@ -9,42 +10,47 @@ struct Store {
 }
 
 #[tauri::command(rename_all = "snake_case")]
-fn show_window(window: tauri::Window) {
+async fn show_window(window: tauri::Window) {
     window.show().unwrap();
 }
 
 #[tauri::command(rename_all = "snake_case")]
-fn load_waveform(test_file_name: Rc<String>, store: tauri::State<Store>) {
-    static SIMPLE_VCD: &'static [u8; 311] = include_bytes!("../../test_files/simple.vcd");
-    static WAVE_27_FST: &'static [u8; 28860652] = include_bytes!("../../test_files/wave_27.fst");
-    let chosen_file = match test_file_name.as_str() {
-        "simple.vcd" => SIMPLE_VCD.to_vec(),
-        "wave_27.fst" => WAVE_27_FST.to_vec(),
-        test_file_name => todo!("add {test_file_name} to the `test_files` folder"),
+async fn pick_and_load_waveform(
+    store: tauri::State<'_, Store>,
+    app: tauri::AppHandle,
+) -> Result<Option<Filename>, ()> {
+    let Some(file_response) = app.dialog().file().blocking_pick_file() else {
+        return Ok(None);
     };
-    let waveform = wellen_helpers::read_from_bytes(chosen_file);
+    let file_path = file_response.path.as_os_str().to_str().unwrap();
+    // @TODO `read` should accept `Path` instead of `&str`
+    let waveform = wellen::simple::read(file_path);
     let Ok(waveform) = waveform else {
-        panic!("VCD file reading failed")
+        panic!("Waveform file reading failed")
     };
     *store.waveform.lock().unwrap() = Some(waveform);
+    Ok(Some(file_response.name.unwrap()))
 }
 
 #[tauri::command(rename_all = "snake_case")]
-fn get_hierarchy(store: tauri::State<Store>) -> serde_json::Value {
+async fn get_hierarchy(store: tauri::State<'_, Store>) -> Result<serde_json::Value, ()> {
     let waveform = store.waveform.lock().unwrap();
     let hierarchy = waveform.as_ref().unwrap().hierarchy();
-    serde_json::to_value(hierarchy).unwrap()
+    Ok(serde_json::to_value(hierarchy).unwrap())
 }
 
 #[tauri::command(rename_all = "snake_case")]
-fn get_time_table(store: tauri::State<Store>) -> serde_json::Value {
+async fn get_time_table(store: tauri::State<'_, Store>) -> Result<serde_json::Value, ()> {
     let waveform = store.waveform.lock().unwrap();
     let time_table = waveform.as_ref().unwrap().time_table();
-    serde_json::to_value(time_table).unwrap()
+    Ok(serde_json::to_value(time_table).unwrap())
 }
 
 #[tauri::command(rename_all = "snake_case")]
-fn load_and_get_signal(signal_ref_index: usize, store: tauri::State<Store>) -> serde_json::Value {
+async fn load_and_get_signal(
+    signal_ref_index: usize,
+    store: tauri::State<'_, Store>,
+) -> Result<serde_json::Value, ()> {
     let signal_ref = wellen::SignalRef::from_index(signal_ref_index).unwrap();
     let mut waveform_lock = store.waveform.lock().unwrap();
     let waveform = waveform_lock.as_mut().unwrap();
@@ -52,15 +58,16 @@ fn load_and_get_signal(signal_ref_index: usize, store: tauri::State<Store>) -> s
     // make the command async or return the result through a Tauri channel
     waveform.load_signals_multi_threaded(&[signal_ref]);
     let signal = waveform.get_signal(signal_ref).unwrap();
-    serde_json::to_value(signal).unwrap()
+    Ok(serde_json::to_value(signal).unwrap())
 }
 
 #[tauri::command(rename_all = "snake_case")]
-fn unload_signal(signal_ref_index: usize, store: tauri::State<Store>) {
+async fn unload_signal(signal_ref_index: usize, store: tauri::State<'_, Store>) -> Result<(), ()> {
     let signal_ref = wellen::SignalRef::from_index(signal_ref_index).unwrap();
     let mut waveform_lock = store.waveform.lock().unwrap();
     let waveform = waveform_lock.as_mut().unwrap();
     waveform.unload_signals(&[signal_ref]);
+    Ok(())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -72,10 +79,11 @@ pub fn run() {
     tauri::Builder::default()
         .manage(Store::default())
         .plugin(tauri_plugin_window_state::Builder::default().build())
+        .plugin(tauri_plugin_dialog::init())
         // Npte: Add all handlers to `frontend/src/tauri_bridge.rs`
         .invoke_handler(tauri::generate_handler![
             show_window,
-            load_waveform,
+            pick_and_load_waveform,
             get_hierarchy,
             get_time_table,
             load_and_get_signal,

@@ -1,5 +1,6 @@
 use crate::{platform, HierarchyAndTimeTable, Layout};
 use futures_util::join;
+use std::cell::Cell;
 use std::mem;
 use std::ops::Not;
 use std::rc::Rc;
@@ -8,6 +9,8 @@ use zoon::*;
 
 const SCOPE_VAR_ROW_MAX_WIDTH: u32 = 480;
 const MILLER_COLUMN_MAX_HEIGHT: u32 = 500;
+
+type Filename = String;
 
 #[derive(Clone)]
 struct VarForUI {
@@ -35,6 +38,7 @@ pub struct ControlsPanel {
     hierarchy_and_time_table: Mutable<Option<HierarchyAndTimeTable>>,
     selected_var_refs: MutableVec<wellen::VarRef>,
     layout: Mutable<Layout>,
+    loaded_filename: Mutable<Option<Filename>>,
 }
 
 impl ControlsPanel {
@@ -48,19 +52,28 @@ impl ControlsPanel {
             hierarchy_and_time_table,
             selected_var_refs,
             layout,
+            loaded_filename: <_>::default(),
         }
         .root()
     }
 
     fn triggers(&self) -> Vec<TaskHandle> {
-        vec![Task::start_droppable(
-            self.hierarchy_and_time_table
-                .signal_ref(Option::is_none)
-                .for_each_sync(clone!((self => s) move |_| {
-                    s.selected_scope_ref.set(None);
-                    s.selected_var_refs.lock_mut().clear();
-                })),
-        )]
+        vec![Task::start_droppable(clone!((self => s) async move {
+            let was_some = Cell::new(false);
+            s.hierarchy_and_time_table
+                .signal_ref(Option::is_some)
+                .dedupe()
+                .for_each_sync(clone!((s) move |is_some| {
+                    if is_some {
+                        return was_some.set(true);
+                    }
+                    if was_some.get() {
+                        s.selected_scope_ref.set(None);
+                        s.selected_var_refs.lock_mut().clear();
+                        s.loaded_filename.set(None);
+                    }
+                })).await
+        }))]
     }
 
     fn root(&self) -> impl Element {
@@ -94,8 +107,7 @@ impl ControlsPanel {
                 Row::new()
                     .s(Gap::both(15))
                     .s(Align::new().left())
-                    .item(self.load_button("simple.vcd"))
-                    .item(self.load_button("wave_27.fst"))
+                    .item(self.load_button())
                     .item(self.layout_switcher()),
             )
             .item_signal(
@@ -112,9 +124,10 @@ impl ControlsPanel {
             ))
     }
 
-    fn load_button(&self, test_file_name: &'static str) -> impl Element {
+    fn load_button(&self) -> impl Element {
         let (hovered, hovered_signal) = Mutable::new_and_signal(false);
         let hierarchy_and_time_table = self.hierarchy_and_time_table.clone();
+        let loaded_filename = self.loaded_filename.clone();
         Button::new()
             .s(Padding::new().x(20).y(10))
             .s(Background::new().color_signal(
@@ -122,16 +135,12 @@ impl ControlsPanel {
             ))
             .s(Align::new().left())
             .s(RoundedCorners::all(15))
-            .label(
-                El::new().s(Font::new().no_wrap()).child_signal(
-                    hierarchy_and_time_table
-                        .signal_ref(Option::is_some)
-                        .map_bool(
-                            || format!("Unload test file"),
-                            move || format!("Load {test_file_name}"),
-                        ),
+            .label(El::new().s(Font::new().no_wrap()).child_signal(
+                loaded_filename.signal_cloned().map_option(
+                    |filename| format!("Unload {filename}"),
+                    || format!("Load file.."),
                 ),
-            )
+            ))
             .on_hovered_change(move |is_hovered| hovered.set_neq(is_hovered))
             .on_press(move || {
                 let mut hierarchy_and_time_table_lock = hierarchy_and_time_table.lock_mut();
@@ -141,11 +150,15 @@ impl ControlsPanel {
                 }
                 drop(hierarchy_and_time_table_lock);
                 let hierarchy_and_time_table = hierarchy_and_time_table.clone();
+                let loaded_filename = loaded_filename.clone();
                 Task::start(async move {
-                    platform::load_waveform(test_file_name).await;
-                    let (hierarchy, time_table) =
-                        join!(platform::get_hierarchy(), platform::get_time_table());
-                    hierarchy_and_time_table.set(Some((Rc::new(hierarchy), Rc::new(time_table))))
+                    if let Some(filename) = platform::pick_and_load_waveform().await {
+                        loaded_filename.set_neq(Some(filename));
+                        let (hierarchy, time_table) =
+                            join!(platform::get_hierarchy(), platform::get_time_table());
+                        hierarchy_and_time_table
+                            .set(Some((Rc::new(hierarchy), Rc::new(time_table))))
+                    }
                 })
             })
     }
