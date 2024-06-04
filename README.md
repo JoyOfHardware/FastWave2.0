@@ -4,7 +4,11 @@
 ---
 
 <p align="center">
-  <img width="800" src="https://github.com/JoyOfHardware/FastWave2.0/assets/18517402/87b7cafb-ccdf-4968-8057-3a19632f227f" alt="fastwave_screenshot" />
+  <img width="800" src="docs/screenshot_firefox.png" alt="fastwave_screenshot_firefox" />
+</p>
+
+<p align="center">
+  <img width="800" src="docs/video_desktop.gif" alt="fastwave_video_desktop" />
 </p>
 
 ---
