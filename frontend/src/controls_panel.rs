@@ -5,7 +5,7 @@ use std::mem;
 use std::ops::Not;
 use std::rc::Rc;
 use wellen::GetItem;
-use zoon::{println, *};
+use zoon::*;
 
 const SCOPE_VAR_ROW_MAX_WIDTH: u32 = 480;
 const MILLER_COLUMN_MAX_HEIGHT: u32 = 500;
@@ -212,11 +212,11 @@ impl ControlsPanel {
                             .attr("type", "file")
                             .event_handler(move |_: events::Input| {
                                 let Some(file_list) = dom_element.files().map(gloo_file::FileList::from) else {
-                                    println!("file list is `None`");
+                                    zoon::println!("file list is `None`");
                                     return;
                                 };
                                 let Some(file) = file_list.first().cloned() else {
-                                    println!("file list is empty");
+                                    zoon::println!("file list is empty");
                                     return;
                                 };
                                 let hierarchy_and_time_table = hierarchy_and_time_table.clone();
