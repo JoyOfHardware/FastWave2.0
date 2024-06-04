@@ -1,7 +1,7 @@
 use shared::wellen_helpers;
 use std::sync::Mutex;
 use wellen::simple::Waveform;
-use zoon::{println, *};
+use zoon::*;
 
 #[derive(Default)]
 struct Store {
@@ -12,30 +12,11 @@ static STORE: Lazy<Store> = lazy::default();
 
 pub(super) async fn show_window() {}
 
-pub(super) async fn pick_and_load_waveform() -> Option<super::Filename> {
-    let file_handles_promise = window().show_open_file_picker().expect_throw(
-        "failed to open file picker (browser has to support `showOpenFilePicker` and use HTTPS",
-    );
-    let file_handles = JsFuture::from(file_handles_promise).await;
-    let file_handles = match file_handles {
-        Ok(file_handles) => file_handles.dyn_into::<js_sys::Array>().unwrap_throw(),
-        Err(error) => {
-            println!("file picker error: {error:?}");
-            return None;
-        }
-    };
-    let file_handle = file_handles
-        .at(0)
-        .dyn_into::<web_sys::FileSystemFileHandle>()
-        .unwrap_throw();
+pub(super) async fn pick_and_load_waveform(
+    file: Option<gloo_file::File>,
+) -> Option<super::Filename> {
+    let file = file.unwrap_throw();
 
-    let file = JsFuture::from(file_handle.get_file())
-        .await
-        .unwrap_throw()
-        .dyn_into::<web_sys::File>()
-        .unwrap_throw();
-
-    let file = gloo_file::File::from(file);
     let content = gloo_file::futures::read_as_bytes(&file)
         .await
         .unwrap_throw();
@@ -47,6 +28,44 @@ pub(super) async fn pick_and_load_waveform() -> Option<super::Filename> {
     *STORE.waveform.lock().unwrap_throw() = Some(waveform);
     Some(file.name())
 }
+
+// @TODO Use this `pick_and_load_waveform` version once `showOpenFilePicker` is supported by Safari and Firefox
+// https://caniuse.com/mdn-api_window_showopenfilepicker
+// pub(super) async fn pick_and_load_waveform() -> Option<super::Filename> {
+//     let file_handles_promise = window().show_open_file_picker().expect_throw(
+//         "failed to open file picker (browser has to support `showOpenFilePicker` and use HTTPS",
+//     );
+//     let file_handles = JsFuture::from(file_handles_promise).await;
+//     let file_handles = match file_handles {
+//         Ok(file_handles) => file_handles.dyn_into::<js_sys::Array>().unwrap_throw(),
+//         Err(error) => {
+//             println!("file picker error: {error:?}");
+//             return None;
+//         }
+//     };
+//     let file_handle = file_handles
+//         .at(0)
+//         .dyn_into::<web_sys::FileSystemFileHandle>()
+//         .unwrap_throw();
+
+//     let file = JsFuture::from(file_handle.get_file())
+//         .await
+//         .unwrap_throw()
+//         .dyn_into::<web_sys::File>()
+//         .unwrap_throw();
+
+//     let file = gloo_file::File::from(file);
+//     let content = gloo_file::futures::read_as_bytes(&file)
+//         .await
+//         .unwrap_throw();
+
+//     let waveform = wellen_helpers::read_from_bytes(content);
+//     let Ok(waveform) = waveform else {
+//         panic!("Waveform file reading failed")
+//     };
+//     *STORE.waveform.lock().unwrap_throw() = Some(waveform);
+//     Some(file.name())
+// }
 
 pub(super) async fn get_hierarchy() -> wellen::Hierarchy {
     let waveform = STORE.waveform.lock().unwrap_throw();

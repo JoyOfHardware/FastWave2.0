@@ -19,9 +19,10 @@ pub async fn show_window() {
     platform::show_window().await
 }
 
-// @TODO allow only support file types
-pub async fn pick_and_load_waveform() -> Option<Filename> {
-    platform::pick_and_load_waveform().await
+// @TODO allow only supported file types by Wellen
+// @TODO remove the `file` parameter once we don't have to use FileInput element
+pub async fn pick_and_load_waveform(file: Option<gloo_file::File>) -> Option<Filename> {
+    platform::pick_and_load_waveform(file).await
 }
 
 pub async fn get_hierarchy() -> wellen::Hierarchy {

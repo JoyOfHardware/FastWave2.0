@@ -4,7 +4,9 @@ pub(super) async fn show_window() {
     tauri_glue::show_window().await.unwrap_throw()
 }
 
-pub(super) async fn pick_and_load_waveform() -> Option<super::Filename> {
+pub(super) async fn pick_and_load_waveform(
+    _file: Option<gloo_file::File>,
+) -> Option<super::Filename> {
     tauri_glue::pick_and_load_waveform()
         .await
         .unwrap_throw()
