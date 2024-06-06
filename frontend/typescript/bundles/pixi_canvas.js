@@ -35225,7 +35225,7 @@ var VarSignalRow = class {
       const signal_block = new Container();
       signal_block.x = timeline_block.x;
       this.signal_blocks_container.addChild(signal_block);
-      const background = new Graphics().roundRect(0, 0, timeline_block.width, this.row_height, 15).fill("SlateBlue");
+      const background = new Graphics().roundRect(0, 0, timeline_block.width, timeline_block.height, 15).fill("SlateBlue");
       signal_block.addChild(background);
       if (timeline_block.label !== void 0) {
         const label = new Text({ text: timeline_block.label.text, style: this.label_style });

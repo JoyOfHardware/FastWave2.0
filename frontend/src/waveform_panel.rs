@@ -117,7 +117,7 @@ impl WaveformPanel {
 
         let var = hierarchy.get(var_ref);
         let signal_ref = var.signal_ref();
-        let timeline = platform::timeline(signal_ref, controller.screen_width()).await;
+        let timeline = platform::timeline(signal_ref, controller.screen_width(), ROW_HEIGHT).await;
 
         // @TODO remove
         zoon::println!("Timeline in Rust: {timeline:#?}");

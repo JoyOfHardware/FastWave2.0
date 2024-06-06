@@ -37,8 +37,8 @@ pub async fn load_and_get_signal(signal_ref: wellen::SignalRef) -> wellen::Signa
     platform::load_and_get_signal(signal_ref).await
 }
 
-pub async fn timeline(signal_ref: wellen::SignalRef, screen_width: u32) -> shared::Timeline {
-    platform::timeline(signal_ref, screen_width).await
+pub async fn timeline(signal_ref: wellen::SignalRef, screen_width: u32, block_height: u32) -> shared::Timeline {
+    platform::timeline(signal_ref, screen_width, block_height).await
 }
 
 pub async fn unload_signal(signal_ref: wellen::SignalRef) {

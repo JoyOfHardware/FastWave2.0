@@ -30,8 +30,8 @@ export async function load_and_get_signal(signal_ref_index: number): Promise<Wel
     return await invoke("load_and_get_signal", { signal_ref_index });
 }
 
-export async function timeline(signal_ref_index: number, screen_width: number): Promise<Timeline> {
-    return await invoke("timeline", { signal_ref_index, screen_width });
+export async function timeline(signal_ref_index: number, screen_width: number, block_height: number): Promise<Timeline> {
+    return await invoke("timeline", { signal_ref_index, screen_width, block_height });
 }
 
 export async function unload_signal(signal_ref_index: number): Promise<void> {

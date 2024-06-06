@@ -2526,8 +2526,8 @@ async function get_time_table() {
 async function load_and_get_signal(signal_ref_index) {
   return await invoke2("load_and_get_signal", { signal_ref_index });
 }
-async function timeline(signal_ref_index, screen_width) {
-  return await invoke2("timeline", { signal_ref_index, screen_width });
+async function timeline(signal_ref_index, screen_width, block_height) {
+  return await invoke2("timeline", { signal_ref_index, screen_width, block_height });
 }
 async function unload_signal(signal_ref_index) {
   return await invoke2("unload_signal", { signal_ref_index });
