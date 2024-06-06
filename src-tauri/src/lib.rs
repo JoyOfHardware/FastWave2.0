@@ -47,22 +47,7 @@ async fn get_time_table(store: tauri::State<'_, Store>) -> Result<serde_json::Va
 }
 
 #[tauri::command(rename_all = "snake_case")]
-async fn load_and_get_signal(
-    signal_ref_index: usize,
-    store: tauri::State<'_, Store>,
-) -> Result<serde_json::Value, ()> {
-    let signal_ref = wellen::SignalRef::from_index(signal_ref_index).unwrap();
-    let mut waveform_lock = store.waveform.lock().unwrap();
-    let waveform = waveform_lock.as_mut().unwrap();
-    // @TODO maybe run it in a thread to not block the main one and then
-    // make the command async or return the result through a Tauri channel
-    waveform.load_signals_multi_threaded(&[signal_ref]);
-    let signal = waveform.get_signal(signal_ref).unwrap();
-    Ok(serde_json::to_value(signal).unwrap())
-}
-
-#[tauri::command(rename_all = "snake_case")]
-async fn timeline(
+async fn load_signal_and_get_timeline(
     signal_ref_index: usize,
     screen_width: u32,
     block_height: u32,
@@ -104,8 +89,7 @@ pub fn run() {
             pick_and_load_waveform,
             get_hierarchy,
             get_time_table,
-            load_and_get_signal,
-            timeline,
+            load_signal_and_get_timeline,
             unload_signal,
         ])
         .run(tauri::generate_context!())

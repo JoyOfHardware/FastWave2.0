@@ -113,11 +113,10 @@ impl WaveformPanel {
             eprintln!("timetable is empty");
             return;
         }
-        let last_time = time_table.last().copied().unwrap_throw();
 
         let var = hierarchy.get(var_ref);
         let signal_ref = var.signal_ref();
-        let timeline = platform::timeline(signal_ref, controller.screen_width(), ROW_HEIGHT).await;
+        let timeline = platform::load_signal_and_get_timeline(signal_ref, controller.screen_width(), ROW_HEIGHT).await;
 
         // @TODO remove
         zoon::println!("Timeline in Rust: {timeline:#?}");

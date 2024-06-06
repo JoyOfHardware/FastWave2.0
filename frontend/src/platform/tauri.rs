@@ -21,18 +21,9 @@ pub(super) async fn get_time_table() -> wellen::TimeTable {
     serde_wasm_bindgen::from_value(tauri_glue::get_time_table().await.unwrap_throw()).unwrap_throw()
 }
 
-pub(super) async fn load_and_get_signal(signal_ref: wellen::SignalRef) -> wellen::Signal {
+pub(super) async fn load_signal_and_get_timeline(signal_ref: wellen::SignalRef, screen_width: u32, block_height: u32) -> shared::Timeline {
     serde_wasm_bindgen::from_value(
-        tauri_glue::load_and_get_signal(signal_ref.index())
-            .await
-            .unwrap_throw(),
-    )
-    .unwrap_throw()
-}
-
-pub(super) async fn timeline(signal_ref: wellen::SignalRef, screen_width: u32, block_height: u32) -> shared::Timeline {
-    serde_wasm_bindgen::from_value(
-        tauri_glue::timeline(signal_ref.index(), screen_width, block_height)
+        tauri_glue::load_signal_and_get_timeline(signal_ref.index(), screen_width, block_height)
             .await
             .unwrap_throw(),
     )
@@ -64,10 +55,7 @@ mod tauri_glue {
         pub async fn get_time_table() -> Result<JsValue, JsValue>;
 
         #[wasm_bindgen(catch)]
-        pub async fn load_and_get_signal(signal_ref_index: usize) -> Result<JsValue, JsValue>;
-
-        #[wasm_bindgen(catch)]
-        pub async fn timeline(signal_ref_index: usize, screen_width: u32, block_height: u32) -> Result<JsValue, JsValue>;
+        pub async fn load_signal_and_get_timeline(signal_ref_index: usize, screen_width: u32, block_height: u32) -> Result<JsValue, JsValue>;
 
         #[wasm_bindgen(catch)]
         pub async fn unload_signal(signal_ref_index: usize) -> Result<(), JsValue>;
