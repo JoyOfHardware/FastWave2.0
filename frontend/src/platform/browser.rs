@@ -81,7 +81,11 @@ pub(super) async fn get_time_table() -> wellen::TimeTable {
     serde_json::from_value(serde_json::to_value(time_table).unwrap_throw()).unwrap_throw()
 }
 
-pub(super) async fn load_signal_and_get_timeline(signal_ref: wellen::SignalRef, screen_width: u32, block_height: u32) -> shared::Timeline {
+pub(super) async fn load_signal_and_get_timeline(
+    signal_ref: wellen::SignalRef,
+    screen_width: u32,
+    block_height: u32,
+) -> shared::Timeline {
     // @TODO implement, copy from tauri platform
     shared::Timeline { blocks: Vec::new() }
 }

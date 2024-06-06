@@ -97,7 +97,7 @@ pub fn run() {
 }
 
 fn signal_to_timeline(
-    signal: &wellen::Signal, 
+    signal: &wellen::Signal,
     time_table: &[wellen::Time],
     screen_width: u32,
     block_height: u32,
@@ -108,7 +108,7 @@ fn signal_to_timeline(
     const LABEL_X_PADDING: u32 = 10;
 
     let Some(last_time) = time_table.last().copied() else {
-        return shared::Timeline::default()
+        return shared::Timeline::default();
     };
 
     let last_time = last_time as f64;
@@ -136,7 +136,7 @@ fn signal_to_timeline(
         let block_width = (next_block_x - block_x) as u32;
         if block_width < MIN_BLOCK_WIDTH {
             continue;
-        } 
+        }
 
         let value = value.to_string();
         // @TODO dynamic formatter
@@ -158,7 +158,7 @@ fn signal_to_timeline(
             x: block_x as u32,
             width: block_width,
             height: block_height,
-            label, 
+            label,
         };
         blocks.push(block);
     }

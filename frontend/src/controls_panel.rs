@@ -563,6 +563,7 @@ impl ControlsPanel {
             });
 
         // Lazy loading to not freeze the main thread
+        // @TODO replace with grouping and/or virtual scroll (https://dev.to/adamklein/build-your-own-virtual-scroll-part-i-11ib)
         const CHUNK_SIZE: usize = 50;
         let mut chunked_vars_for_ui: Vec<Vec<VarForUI>> = <_>::default();
         let mut chunk = Vec::with_capacity(CHUNK_SIZE);
