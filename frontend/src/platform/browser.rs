@@ -81,17 +81,8 @@ pub(super) async fn get_time_table() -> wellen::TimeTable {
     serde_json::from_value(serde_json::to_value(time_table).unwrap_throw()).unwrap_throw()
 }
 
-pub(super) async fn load_and_get_signal(signal_ref: wellen::SignalRef) -> wellen::Signal {
-    let mut waveform_lock = STORE.waveform.lock().unwrap_throw();
-    let waveform = waveform_lock.as_mut().unwrap_throw();
-    // @TODO maybe run it in a thread to not block the main one and then
-    waveform.load_signals(&[signal_ref]);
-    let signal = waveform.get_signal(signal_ref).unwrap_throw();
-    // @TODO `clone` / `Rc/Arc` / refactor?
-    serde_json::from_value(serde_json::to_value(signal).unwrap_throw()).unwrap_throw()
-}
-
-pub(super) async fn timeline(signal_ref: wellen::SignalRef, screen_width: u32, block_height: u32) -> shared::Timeline {
+pub(super) async fn load_signal_and_get_timeline(signal_ref: wellen::SignalRef, screen_width: u32, block_height: u32) -> shared::Timeline {
+    // @TODO implement, copy from tauri platform
     shared::Timeline { blocks: Vec::new() }
 }
 
