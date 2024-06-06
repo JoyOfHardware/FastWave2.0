@@ -33,7 +33,11 @@ pub async fn get_time_table() -> wellen::TimeTable {
     platform::get_time_table().await
 }
 
-pub async fn load_signal_and_get_timeline(signal_ref: wellen::SignalRef, screen_width: u32, block_height: u32) -> shared::Timeline {
+pub async fn load_signal_and_get_timeline(
+    signal_ref: wellen::SignalRef,
+    screen_width: u32,
+    block_height: u32,
+) -> shared::Timeline {
     platform::load_signal_and_get_timeline(signal_ref, screen_width, block_height).await
 }
 

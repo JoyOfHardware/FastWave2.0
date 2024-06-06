@@ -116,7 +116,12 @@ impl WaveformPanel {
 
         let var = hierarchy.get(var_ref);
         let signal_ref = var.signal_ref();
-        let timeline = platform::load_signal_and_get_timeline(signal_ref, controller.screen_width(), ROW_HEIGHT).await;
+        let timeline = platform::load_signal_and_get_timeline(
+            signal_ref,
+            controller.screen_width(),
+            ROW_HEIGHT,
+        )
+        .await;
 
         let timescale = hierarchy.timescale();
         // @TODO remove

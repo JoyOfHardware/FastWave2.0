@@ -5,7 +5,7 @@ pub mod wellen_helpers;
 #[derive(Serialize, Deserialize, Debug, Default)]
 #[serde(crate = "serde")]
 pub struct Timeline {
-    pub blocks: Vec<TimelineBlock>
+    pub blocks: Vec<TimelineBlock>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
