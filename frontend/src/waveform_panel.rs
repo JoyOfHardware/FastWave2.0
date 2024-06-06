@@ -26,6 +26,7 @@ impl WaveformPanel {
         .root()
     }
 
+    // @TODO autoscroll down
     fn root(&self) -> impl Element {
         let selected_vars_panel_height_getter: Mutable<u32> = <_>::default();
         Row::new()
@@ -56,7 +57,6 @@ impl WaveformPanel {
             .s(Align::new().top())
             .s(Width::fill())
             .s(Height::exact_signal(selected_vars_panel_height.signal()))
-            .s(RoundedCorners::new().right(15))
             .task_with_controller(move |controller| {
                 selected_var_refs.signal_vec().delay_remove(clone!((hierarchy_and_time_table) move |var_ref| {
                     clone!((var_ref, hierarchy_and_time_table) async move {
@@ -118,17 +118,10 @@ impl WaveformPanel {
         let signal_ref = var.signal_ref();
         let timeline = platform::load_signal_and_get_timeline(signal_ref, controller.screen_width(), ROW_HEIGHT).await;
 
-        // @TODO remove
-        zoon::println!("Timeline in Rust: {timeline:#?}");
-
         let timescale = hierarchy.timescale();
         // @TODO remove
         zoon::println!("{timescale:?}");
 
-        if timeline.blocks.is_empty() {
-            eprintln!("timeline is empty");
-            return;
-        }
         // Note: Sync `timeline`'s type with the `Timeline` in `frontend/typescript/pixi_canvas/pixi_canvas.ts'
         controller.push_var(serde_wasm_bindgen::to_value(&timeline).unwrap_throw());
     }
