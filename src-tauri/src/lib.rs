@@ -65,18 +65,17 @@ async fn load_and_get_signal(
 async fn timeline(
     signal_ref_index: usize,
     screen_width: u32,
+    block_height: u32,
     store: tauri::State<'_, Store>,
 ) -> Result<serde_json::Value, ()> {
+    // @TODO run (all?) in a blocking thread
     let signal_ref = wellen::SignalRef::from_index(signal_ref_index).unwrap();
     let mut waveform_lock = store.waveform.lock().unwrap();
     let waveform = waveform_lock.as_mut().unwrap();
-    // @TODO maybe run it in a thread to not block the main one or return the result through a Tauri channel
     waveform.load_signals_multi_threaded(&[signal_ref]);
     let signal = waveform.get_signal(signal_ref).unwrap();
-
-    // @TODO create Timeline
-    let timeline = shared::Timeline { blocks: Vec::new() };
-
+    let time_table = waveform.time_table();
+    let timeline = signal_to_timeline(signal, time_table, screen_width, block_height);
     Ok(serde_json::to_value(timeline).unwrap())
 }
 
@@ -111,4 +110,74 @@ pub fn run() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+fn signal_to_timeline(
+    signal: &wellen::Signal, 
+    time_table: &[wellen::Time],
+    screen_width: u32,
+    block_height: u32,
+) -> shared::Timeline {
+    const MIN_BLOCK_WIDTH: u32 = 3;
+    const LETTER_WIDTH: u32 = 15;
+    const LETTER_HEIGHT: u32 = 21;
+    const LABEL_X_PADDING: u32 = 10;
+
+    let Some(last_time) = time_table.last().copied() else {
+        return shared::Timeline::default()
+    };
+
+    let last_time = last_time as f64;
+    let screen_width = screen_width as f64;
+
+    let mut x_value_pairs = signal
+        .iter_changes()
+        .map(|(index, value)| {
+            let index = index as usize;
+            let time = time_table[index] as f64;
+            let x = time / last_time * screen_width;
+            (x, value)
+        })
+        .peekable();
+
+    let mut blocks = Vec::new();
+
+    while let Some((block_x, value)) = x_value_pairs.next() {
+        let next_block_x = if let Some((next_block_x, _)) = x_value_pairs.peek() {
+            *next_block_x
+        } else {
+            screen_width
+        };
+
+        let block_width = (next_block_x - block_x) as u32;
+        if block_width < MIN_BLOCK_WIDTH {
+            continue;
+        } 
+
+        let value = value.to_string();
+        // @TODO dynamic formatter
+        let value = u32::from_str_radix(&value, 2).unwrap();
+        let value = format!("{value:x}");
+
+        let value_width = value.chars().count() as u32 * LETTER_WIDTH;
+        let label = if (value_width + (2 * LABEL_X_PADDING)) <= block_width {
+            Some(shared::TimeLineBlockLabel {
+                text: value,
+                x: (block_width - value_width) / 2,
+                y: (block_height - LETTER_HEIGHT) / 2,
+            })
+        } else {
+            None
+        };
+
+        let block = shared::TimelineBlock {
+            x: block_x as u32,
+            width: block_width,
+            height: block_height,
+            label, 
+        };
+        blocks.push(block);
+    }
+
+    shared::Timeline { blocks }
 }

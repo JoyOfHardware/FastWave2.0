@@ -7,6 +7,7 @@ type Timeline = {
 type TimelineBlock = {
     x: number,
     width: number,
+    height: number,
     label: TimeLineBlockLabel | undefined,
 }
 type TimeLineBlockLabel = {
@@ -153,7 +154,7 @@ class VarSignalRow {
 
             // background
             const background = new Graphics()
-                .roundRect(0, 0, timeline_block.width, this.row_height, 15)
+                .roundRect(0, 0, timeline_block.width, timeline_block.height, 15)
                 .fill("SlateBlue");
             signal_block.addChild(background);
 
