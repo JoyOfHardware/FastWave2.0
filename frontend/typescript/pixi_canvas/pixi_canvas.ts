@@ -1,4 +1,4 @@
-import { Application, Text, Graphics, Container, TextStyle, ContainerChild } from "pixi.js";
+import { Application, Text, Graphics, Container, TextStyle, Sprite, Texture } from "pixi.js";
 
 // @TODO sync with Rust and `tauri_glue.ts`
 type Timeline = {
@@ -68,7 +68,6 @@ export class PixiController {
     }
 
     push_var(timeline: Timeline) {
-        console.log("Timline in Typescript:", timeline);
         new VarSignalRow(
             timeline,
             this.app,
@@ -99,6 +98,7 @@ class VarSignalRow {
     row_height_with_gap: number;
     renderer_resize_callback = () => this.draw();
     row_container = new Container();
+    row_container_background: Sprite;
     signal_blocks_container = new Container();
     label_style = new TextStyle({
         align: "center",
@@ -133,6 +133,13 @@ class VarSignalRow {
         this.row_container.y = this.index_in_owner * this.row_height_with_gap;
         this.rows_container.addChild(this.row_container);
 
+        // row background
+        this.row_container_background = new Sprite();
+        this.row_container_background.texture = Texture.WHITE;
+        this.row_container_background.tint = '0x550099';
+        this.row_container_background.height = this.row_height;
+        this.row_container.addChild(this.row_container_background);
+
         // signal_blocks_container
         this.row_container.addChild(this.signal_blocks_container);
 
@@ -145,6 +152,8 @@ class VarSignalRow {
     }
 
     draw() {
+        this.row_container_background.width = this.app.screen.width;
+
         this.signal_blocks_container.removeChildren();
         this.timeline.blocks.forEach(timeline_block => {
             // signal_block
@@ -153,14 +162,17 @@ class VarSignalRow {
             this.signal_blocks_container.addChild(signal_block);
 
             // background
+            const gap_between_blocks = 2;
             const background = new Graphics()
-                .roundRect(0, 0, timeline_block.width, timeline_block.height, 15)
-                .fill("SlateBlue");
+                .rect(gap_between_blocks / 2, 0, timeline_block.width - gap_between_blocks, timeline_block.height)
+                .fill('SlateBlue');
             signal_block.addChild(background);
 
             // label
             if (timeline_block.label !== undefined) {
-                const label = new Text({ text: timeline_block.label.text, style: this.label_style });
+                const label = new Text();
+                label.text = timeline_block.label.text;
+                label.style = this.label_style;
                 label.x = timeline_block.label.x;
                 label.y = timeline_block.label.y;
                 signal_block.addChild(label);
