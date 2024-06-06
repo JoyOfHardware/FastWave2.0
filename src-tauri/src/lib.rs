@@ -62,6 +62,25 @@ async fn load_and_get_signal(
 }
 
 #[tauri::command(rename_all = "snake_case")]
+async fn timeline(
+    signal_ref_index: usize,
+    screen_width: u32,
+    store: tauri::State<'_, Store>,
+) -> Result<serde_json::Value, ()> {
+    let signal_ref = wellen::SignalRef::from_index(signal_ref_index).unwrap();
+    let mut waveform_lock = store.waveform.lock().unwrap();
+    let waveform = waveform_lock.as_mut().unwrap();
+    // @TODO maybe run it in a thread to not block the main one or return the result through a Tauri channel
+    waveform.load_signals_multi_threaded(&[signal_ref]);
+    let signal = waveform.get_signal(signal_ref).unwrap();
+
+    // @TODO create Timeline
+    let timeline = shared::Timeline { blocks: Vec::new() };
+
+    Ok(serde_json::to_value(timeline).unwrap())
+}
+
+#[tauri::command(rename_all = "snake_case")]
 async fn unload_signal(signal_ref_index: usize, store: tauri::State<'_, Store>) -> Result<(), ()> {
     let signal_ref = wellen::SignalRef::from_index(signal_ref_index).unwrap();
     let mut waveform_lock = store.waveform.lock().unwrap();
@@ -87,6 +106,7 @@ pub fn run() {
             get_hierarchy,
             get_time_table,
             load_and_get_signal,
+            timeline,
             unload_signal,
         ])
         .run(tauri::generate_context!())

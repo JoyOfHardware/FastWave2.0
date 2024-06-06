@@ -117,24 +117,19 @@ impl WaveformPanel {
 
         let var = hierarchy.get(var_ref);
         let signal_ref = var.signal_ref();
-        let signal = platform::load_and_get_signal(signal_ref).await;
+        let timeline = platform::timeline(signal_ref, controller.screen_width()).await;
+
+        // @TODO remove
+        zoon::println!("Timeline in Rust: {timeline:#?}");
 
         let timescale = hierarchy.timescale();
         // @TODO remove
         zoon::println!("{timescale:?}");
 
-        let mut timeline: Vec<(wellen::Time, String)> = signal
-            .iter_changes()
-            .map(|(time_index, signal_value)| {
-                (time_table[time_index as usize], signal_value.to_string())
-            })
-            .collect();
-        if timeline.is_empty() {
+        if timeline.blocks.is_empty() {
             eprintln!("timeline is empty");
             return;
         }
-        timeline.push((last_time, timeline.last().cloned().unwrap_throw().1));
-
         // Note: Sync `timeline`'s type with the `Timeline` in `frontend/typescript/pixi_canvas/pixi_canvas.ts'
         controller.push_var(serde_wasm_bindgen::to_value(&timeline).unwrap_throw());
     }

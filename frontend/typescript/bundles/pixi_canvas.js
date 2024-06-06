@@ -35126,7 +35126,6 @@ var import_earcut2 = __toESM(require_earcut(), 1);
 extensions.add(browserExt, webworkerExt);
 
 // pixi_canvas.ts
-var MIN_BLOCK_WIDTH = 1;
 var PixiController = class {
   app;
   // -- FastWave-specific --
@@ -35160,6 +35159,9 @@ var PixiController = class {
     };
     this.app.destroy(rendererDestroyOptions, options);
   }
+  screen_width() {
+    return this.app.screen.width;
+  }
   // -- FastWave-specific --
   remove_var(index) {
     if (typeof this.var_signal_rows[index] !== "undefined") {
@@ -35167,6 +35169,7 @@ var PixiController = class {
     }
   }
   push_var(timeline) {
+    console.log("Timline in Typescript:", timeline);
     new VarSignalRow(
       timeline,
       this.app,
@@ -35186,17 +35189,13 @@ var PixiController = class {
 var VarSignalRow = class {
   app;
   timeline;
-  last_time;
-  formatter;
-  timeline_for_ui;
   owner;
   index_in_owner;
   rows_container;
   row_height;
   row_gap;
   row_height_with_gap;
-  renderer_resize_callback = () => this.redraw_on_canvas_resize();
-  // -- elements --
+  renderer_resize_callback = () => this.draw();
   row_container = new Container();
   signal_blocks_container = new Container();
   label_style = new TextStyle({
@@ -35208,12 +35207,6 @@ var VarSignalRow = class {
   constructor(timeline, app, owner, rows_container, row_height, row_gap) {
     this.app = app;
     this.timeline = timeline;
-    this.last_time = timeline[timeline.length - 1][0];
-    this.formatter = (signal_value) => parseInt(signal_value, 2).toString(16);
-    this.timeline_for_ui = this.timeline.map(([time, value]) => {
-      const x2 = time / this.last_time * this.app.screen.width;
-      return [x2, this.formatter(value)];
-    });
     this.row_height = row_height;
     this.row_gap = row_gap;
     this.row_height_with_gap = row_height + row_gap;
@@ -35221,90 +35214,26 @@ var VarSignalRow = class {
     this.owner = owner;
     this.owner.push(this);
     this.rows_container = rows_container;
-    this.draw();
-    this.app.renderer.on("resize", this.renderer_resize_callback);
-  }
-  async draw() {
     this.row_container.y = this.index_in_owner * this.row_height_with_gap;
     this.rows_container.addChild(this.row_container);
     this.row_container.addChild(this.signal_blocks_container);
-    for (let index = 0; index < this.timeline_for_ui.length; index++) {
-      if (index == this.timeline_for_ui.length - 1) {
-        return;
-      }
-      await new Promise((resolve) => setTimeout(resolve, 0));
-      const [x2, value] = this.timeline_for_ui[index];
-      const block_width = this.timeline_for_ui[index + 1][0] - x2;
-      const block_height = this.row_height;
-      if (block_width < MIN_BLOCK_WIDTH) {
-        return;
-      }
-      const signal_block = new Container();
-      signal_block.x = x2;
-      this.signal_blocks_container.addChild(signal_block);
-      const background = new Graphics().roundRect(0, 0, block_width, block_height, 15).fill("SlateBlue");
-      background.label = "background";
-      signal_block.addChild(background);
-      const label = new Text({ text: value, style: this.label_style });
-      label.x = (block_width - label.width) / 2;
-      label.y = (block_height - label.height) / 2;
-      label.visible = label.width < block_width;
-      label.label = "label";
-      signal_block.addChild(label);
-    }
+    this.draw();
   }
-  async redraw_on_canvas_resize() {
-    for (let index = 0; index < this.timeline_for_ui.length; index++) {
-      const x2 = this.timeline[index][0] / this.last_time * this.app.screen.width;
-      this.timeline_for_ui[index][0] = x2;
-    }
-    for (let index = 0; index < this.timeline_for_ui.length; index++) {
-      if (index == this.timeline_for_ui.length - 1) {
-        return;
+  draw() {
+    this.signal_blocks_container.removeChildren();
+    this.timeline.blocks.forEach((timeline_block) => {
+      const signal_block = new Container();
+      signal_block.x = timeline_block.x;
+      this.signal_blocks_container.addChild(signal_block);
+      const background = new Graphics().roundRect(0, 0, timeline_block.width, this.row_height, 15).fill("SlateBlue");
+      signal_block.addChild(background);
+      if (timeline_block.label !== void 0) {
+        const label = new Text({ text: timeline_block.label.text, style: this.label_style });
+        label.x = timeline_block.label.x;
+        label.y = timeline_block.label.y;
+        signal_block.addChild(label);
       }
-      await new Promise((resolve) => setTimeout(resolve, 0));
-      const [x2, value] = this.timeline_for_ui[index];
-      const block_width = this.timeline_for_ui[index + 1][0] - x2;
-      const block_height = this.row_height;
-      const block_visible = block_width >= MIN_BLOCK_WIDTH;
-      let signal_block = this.signal_blocks_container.children[index];
-      if (signal_block === void 0 && !block_visible) {
-        return;
-      }
-      if (signal_block !== void 0 && !block_visible) {
-        signal_block.visible = false;
-        return;
-      }
-      if (signal_block === void 0 && block_visible) {
-        signal_block = new Container();
-        signal_block.x = x2;
-        this.signal_blocks_container.addChild(signal_block);
-      } else if (signal_block !== void 0 && block_visible) {
-        signal_block.visible = true;
-        signal_block.x = x2;
-      }
-      let background = signal_block.getChildByLabel("background");
-      if (background === null) {
-        background = new Graphics().roundRect(0, 0, block_width, block_height, 15).fill("SlateBlue");
-        background.label = "background";
-        signal_block.addChild(background);
-      } else {
-        background.width = block_width;
-      }
-      const label = signal_block.getChildByLabel("label");
-      if (label === null) {
-        const label2 = new Text({ text: value, style: this.label_style });
-        label2.x = (block_width - label2.width) / 2;
-        label2.y = (block_height - label2.height) / 2;
-        label2.visible = label2.width < block_width;
-        label2.label = "label";
-        signal_block.addChild(label2);
-      } else {
-        label.x = (block_width - label.width) / 2;
-        label.y = (block_height - label.height) / 2;
-        label.visible = label.width < block_width;
-      }
-    }
+    });
   }
   decrement_index() {
     this.index_in_owner--;

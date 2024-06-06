@@ -8,6 +8,7 @@ type Filename = string;
 type WellenHierarchy = unknown;
 type WellenTimeTable = unknown;
 type WellenSignal = unknown;
+type Timeline = unknown;
 
 export async function show_window(): Promise<void> {
     return await invoke("show_window");
@@ -27,6 +28,10 @@ export async function get_time_table(): Promise<WellenTimeTable> {
 
 export async function load_and_get_signal(signal_ref_index: number): Promise<WellenSignal> {
     return await invoke("load_and_get_signal", { signal_ref_index });
+}
+
+export async function timeline(signal_ref_index: number, screen_width: number): Promise<Timeline> {
+    return await invoke("timeline", { signal_ref_index, screen_width });
 }
 
 export async function unload_signal(signal_ref_index: number): Promise<void> {

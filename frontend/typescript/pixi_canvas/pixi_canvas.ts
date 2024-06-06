@@ -1,13 +1,19 @@
 import { Application, Text, Graphics, Container, TextStyle, ContainerChild } from "pixi.js";
 
-type Time = number;
-type BitString = string;
-type Timeline = Array<[Time, BitString]>;
-
-type X = number;
-type TimelineForUI = Array<[X, string]>;
-
-const MIN_BLOCK_WIDTH = 1;
+// @TODO sync with Rust and `tauri_glue.ts`
+type Timeline = {
+    blocks: Array<TimelineBlock>
+}
+type TimelineBlock = {
+    x: number,
+    width: number,
+    label: TimeLineBlockLabel | undefined,
+}
+type TimeLineBlockLabel = {
+    text: string,
+    x: number,
+    y: number,
+}
 
 export class PixiController {
     app: Application
@@ -48,6 +54,10 @@ export class PixiController {
         this.app.destroy(rendererDestroyOptions, options);
     }
 
+    screen_width() {
+        return this.app.screen.width;
+    }
+
     // -- FastWave-specific --
 
     remove_var(index: number) {
@@ -57,6 +67,7 @@ export class PixiController {
     }
 
     push_var(timeline: Timeline) {
+        console.log("Timline in Typescript:", timeline);
         new VarSignalRow(
             timeline,
             this.app,
@@ -79,17 +90,13 @@ export class PixiController {
 class VarSignalRow {
     app: Application;
     timeline: Timeline;
-    last_time: Time;
-    formatter: (signal_value: BitString) => string;
-    timeline_for_ui: TimelineForUI;
     owner: Array<VarSignalRow>;
     index_in_owner: number;
     rows_container: Container;
     row_height: number;
     row_gap: number;
     row_height_with_gap: number;
-    renderer_resize_callback = () => this.redraw_on_canvas_resize();
-    // -- elements --
+    renderer_resize_callback = () => this.draw();
     row_container = new Container();
     signal_blocks_container = new Container();
     label_style = new TextStyle({
@@ -110,13 +117,6 @@ class VarSignalRow {
         this.app = app;
 
         this.timeline = timeline;
-        this.last_time = timeline[timeline.length - 1][0];
-        this.formatter = signal_value => parseInt(signal_value, 2).toString(16);
-
-        this.timeline_for_ui = this.timeline.map(([time, value]) => {
-            const x = time / this.last_time * this.app.screen.width;
-            return [x, this.formatter(value)]
-        });
 
         this.row_height = row_height;
         this.row_gap = row_gap;
@@ -128,113 +128,43 @@ class VarSignalRow {
 
         this.rows_container = rows_container;
 
-        this.draw();
-        this.app.renderer.on("resize", this.renderer_resize_callback);
-    }
-
-    async draw() {
         // row_container
         this.row_container.y = this.index_in_owner * this.row_height_with_gap;
         this.rows_container.addChild(this.row_container);
 
-        // signal_block_container
+        // signal_blocks_container
         this.row_container.addChild(this.signal_blocks_container);
 
-        for (let index = 0; index < this.timeline_for_ui.length; index++) {
-            if (index == this.timeline_for_ui.length - 1) {
-                return;
-            }
-            await new Promise(resolve => setTimeout(resolve, 0));
-            const [x, value] = this.timeline_for_ui[index];
+        this.draw();
+        // this.app.renderer.on("resize", (width, height) => { 
+        //     // @TODO only on `width` change
+        //     // @TODO inline `renderer_resize_callback`?
+        //     this.draw();
+        // });
+    }
 
+    draw() {
+        this.signal_blocks_container.removeChildren();
+        this.timeline.blocks.forEach(timeline_block => {
             // signal_block
-            const block_width = this.timeline_for_ui[index+1][0] - x;
-            const block_height = this.row_height;
-            if (block_width < MIN_BLOCK_WIDTH) {
-                return;
-            }
             const signal_block = new Container();
-            signal_block.x = x;
+            signal_block.x = timeline_block.x;
             this.signal_blocks_container.addChild(signal_block);
 
             // background
             const background = new Graphics()
-                .roundRect(0, 0, block_width, block_height, 15)
+                .roundRect(0, 0, timeline_block.width, this.row_height, 15)
                 .fill("SlateBlue");
-            background.label = "background";
             signal_block.addChild(background);
 
             // label
-            const label = new Text({ text: value, style: this.label_style });
-            label.x = (block_width - label.width) / 2;
-            label.y = (block_height - label.height) / 2;
-            label.visible = label.width < block_width;
-            label.label = "label";
-            signal_block.addChild(label);
-        }
-    }
-
-    async redraw_on_canvas_resize() {
-        for (let index = 0; index < this.timeline_for_ui.length; index++) {
-            const x = this.timeline[index][0] / this.last_time * this.app.screen.width;
-            this.timeline_for_ui[index][0] = x;
-        }
-        for (let index = 0; index < this.timeline_for_ui.length; index++) {
-            if (index == this.timeline_for_ui.length - 1) {
-                return;
-            }
-            await new Promise(resolve => setTimeout(resolve, 0));
-            const [x, value] = this.timeline_for_ui[index];
-            
-            // signal_block
-            const block_width = this.timeline_for_ui[index+1][0] - x;
-            const block_height = this.row_height;
-            const block_visible = block_width >= MIN_BLOCK_WIDTH;
-
-            let signal_block: ContainerChild | undefined = this.signal_blocks_container.children[index];
-            if (signal_block === undefined && !block_visible) {
-                return;
-            }
-            if (signal_block !== undefined && !block_visible) {
-                signal_block.visible = false;
-                return;
-            }
-            if (signal_block === undefined && block_visible) {
-                signal_block = new Container();
-                signal_block.x = x;
-                this.signal_blocks_container.addChild(signal_block);
-            } else if (signal_block !== undefined && block_visible) {
-                signal_block.visible = true;
-                signal_block.x = x;
-            }
-
-            // background
-            let background = signal_block.getChildByLabel("background");
-            if (background === null) {
-                background = new Graphics()
-                    .roundRect(0, 0, block_width, block_height, 15)
-                    .fill("SlateBlue");
-                background.label = "background";
-                signal_block.addChild(background);
-            } else {
-                background.width = block_width;
-            }
-
-            // label
-            const label = signal_block.getChildByLabel("label");
-            if (label === null ) {
-                const label = new Text({ text: value, style: this.label_style });
-                label.x = (block_width - label.width) / 2;
-                label.y = (block_height - label.height) / 2;
-                label.visible = label.width < block_width;
-                label.label = "label";
+            if (timeline_block.label !== undefined) {
+                const label = new Text({ text: timeline_block.label.text, style: this.label_style });
+                label.x = timeline_block.label.x;
+                label.y = timeline_block.label.y;
                 signal_block.addChild(label);
-            } else {
-                label.x = (block_width - label.width) / 2;
-                label.y = (block_height - label.height) / 2;
-                label.visible = label.width < block_width;
             }
-        }
+        });
     }
 
     decrement_index() {

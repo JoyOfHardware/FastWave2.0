@@ -16,11 +16,12 @@ readme = "../README.md"
 publish = false
 
 [workspace.dependencies]
-shared = { path = "./shared" }
 # wellen = { version = "0.9.9", features = ["serde1"] }
 # wellen = { path = "../wellen/wellen", features = ["serde1"] }
 wellen = { git = "https://github.com/MartinKavik/wellen", features = ["serde1"], branch = "new_pub_types" }
 # moon = { path = "../../crates/moon" }
 # zoon = { path = "../../crates/zoon" }
+# moonlight = { path = "../../crates/zoon" }
 zoon = { git = "https://github.com/MoonZoon/MoonZoon", rev = "fc73b0d90bf39be72e70fdcab4f319ea5b8e6cfc" }
 moon = { git = "https://github.com/MoonZoon/MoonZoon", rev = "fc73b0d90bf39be72e70fdcab4f319ea5b8e6cfc" }
+moonlight = { git = "https://github.com/MoonZoon/MoonZoon", rev = "fc73b0d90bf39be72e70fdcab4f319ea5b8e6cfc" }
