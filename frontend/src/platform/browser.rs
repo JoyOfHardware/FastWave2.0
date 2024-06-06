@@ -91,6 +91,10 @@ pub(super) async fn load_and_get_signal(signal_ref: wellen::SignalRef) -> wellen
     serde_json::from_value(serde_json::to_value(signal).unwrap_throw()).unwrap_throw()
 }
 
+pub(super) async fn timeline(signal_ref: wellen::SignalRef, screen_width: u32) -> shared::Timeline {
+    shared::Timeline { blocks: Vec::new() }
+}
+
 pub(super) async fn unload_signal(signal_ref: wellen::SignalRef) {
     let mut waveform_lock = STORE.waveform.lock().unwrap_throw();
     let waveform = waveform_lock.as_mut().unwrap_throw();

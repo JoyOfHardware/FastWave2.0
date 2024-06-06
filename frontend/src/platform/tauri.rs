@@ -30,6 +30,15 @@ pub(super) async fn load_and_get_signal(signal_ref: wellen::SignalRef) -> wellen
     .unwrap_throw()
 }
 
+pub(super) async fn timeline(signal_ref: wellen::SignalRef, screen_width: u32) -> shared::Timeline {
+    serde_wasm_bindgen::from_value(
+        tauri_glue::timeline(signal_ref.index(), screen_width)
+            .await
+            .unwrap_throw(),
+    )
+    .unwrap_throw()
+}
+
 pub(super) async fn unload_signal(signal_ref: wellen::SignalRef) {
     tauri_glue::unload_signal(signal_ref.index())
         .await
@@ -56,6 +65,9 @@ mod tauri_glue {
 
         #[wasm_bindgen(catch)]
         pub async fn load_and_get_signal(signal_ref_index: usize) -> Result<JsValue, JsValue>;
+
+        #[wasm_bindgen(catch)]
+        pub async fn timeline(signal_ref_index: usize, screen_width: u32) -> Result<JsValue, JsValue>;
 
         #[wasm_bindgen(catch)]
         pub async fn unload_signal(signal_ref_index: usize) -> Result<(), JsValue>;

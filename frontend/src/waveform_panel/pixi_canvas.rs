@@ -101,10 +101,13 @@ mod js_bridge {
         pub async fn init(this: &PixiController, parent_element: &JsValue);
 
         #[wasm_bindgen(method)]
+        pub fn queue_resize(this: &PixiController);
+
+        #[wasm_bindgen(method)]
         pub fn destroy(this: &PixiController);
 
         #[wasm_bindgen(method)]
-        pub fn queue_resize(this: &PixiController);
+        pub fn screen_width(this: &PixiController) -> u32;
 
         // -- FastWave-specific --
 
