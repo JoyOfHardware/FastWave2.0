@@ -140,7 +140,7 @@ fn signal_to_timeline(
 
         let value = value.to_string();
         // @TODO dynamic formatter
-        let value = u32::from_str_radix(&value, 2).unwrap();
+        let value = u128::from_str_radix(&value, 2).unwrap();
         let value = format!("{value:x}");
 
         let value_width = value.chars().count() as u32 * LETTER_WIDTH;
