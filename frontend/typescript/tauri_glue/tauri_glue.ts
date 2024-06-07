@@ -22,10 +22,6 @@ export async function get_hierarchy(): Promise<WellenHierarchy> {
     return await invoke("get_hierarchy");
 }
 
-export async function get_time_table(): Promise<WellenTimeTable> {
-    return await invoke("get_time_table");
-}
-
 export async function load_signal_and_get_timeline(signal_ref_index: number, screen_width: number, block_height: number): Promise<Timeline> {
     return await invoke("load_signal_and_get_timeline", { signal_ref_index, screen_width, block_height });
 }

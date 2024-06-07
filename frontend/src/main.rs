@@ -1,5 +1,5 @@
-use std::rc::Rc;
 use zoon::*;
+use std::rc::Rc;
 
 mod platform;
 
@@ -8,8 +8,6 @@ use controls_panel::ControlsPanel;
 
 mod waveform_panel;
 use waveform_panel::WaveformPanel;
-
-type HierarchyAndTimeTable = (Rc<wellen::Hierarchy>, Rc<wellen::TimeTable>);
 
 #[derive(Clone, Copy, Default)]
 enum Layout {
@@ -28,7 +26,7 @@ fn main() {
 }
 
 fn root() -> impl Element {
-    let hierarchy_and_time_table: Mutable<Option<HierarchyAndTimeTable>> = <_>::default();
+    let hierarchy: Mutable<Option<Rc<wellen::Hierarchy>>> = <_>::default();
     let selected_var_refs: MutableVec<wellen::VarRef> = <_>::default();
     let layout: Mutable<Layout> = <_>::default();
     Column::new()
@@ -40,17 +38,17 @@ fn root() -> impl Element {
                 .s(Height::fill())
                 .s(Gap::new().x(15))
                 .item(ControlsPanel::new(
-                    hierarchy_and_time_table.clone(),
+                    hierarchy.clone(),
                     selected_var_refs.clone(),
                     layout.clone(),
                 ))
-                .item_signal(layout.signal().map(|layout| matches!(layout, Layout::Tree)).map_true(clone!((hierarchy_and_time_table, selected_var_refs) move || WaveformPanel::new(
-                    hierarchy_and_time_table.clone(),
+                .item_signal(layout.signal().map(|layout| matches!(layout, Layout::Tree)).map_true(clone!((hierarchy, selected_var_refs) move || WaveformPanel::new(
+                    hierarchy.clone(),
                     selected_var_refs.clone(),
                 ))))
         )
         .item_signal(layout.signal().map(|layout| matches!(layout, Layout::Columns)).map_true(move || WaveformPanel::new(
-            hierarchy_and_time_table.clone(),
+            hierarchy.clone(),
             selected_var_refs.clone(),
         )))
 }

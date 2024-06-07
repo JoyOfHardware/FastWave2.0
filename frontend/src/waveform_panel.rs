@@ -1,4 +1,5 @@
-use crate::{platform, HierarchyAndTimeTable};
+use crate::platform;
+use std::rc::Rc;
 use wellen::GetItem;
 use zoon::*;
 
@@ -11,17 +12,17 @@ const ROW_GAP: u32 = 4;
 #[derive(Clone)]
 pub struct WaveformPanel {
     selected_var_refs: MutableVec<wellen::VarRef>,
-    hierarchy_and_time_table: Mutable<Option<HierarchyAndTimeTable>>,
+    hierarchy: Mutable<Option<Rc<wellen::Hierarchy>>>,
 }
 
 impl WaveformPanel {
     pub fn new(
-        hierarchy_and_time_table: Mutable<Option<HierarchyAndTimeTable>>,
+        hierarchy: Mutable<Option<Rc<wellen::Hierarchy>>>,
         selected_var_refs: MutableVec<wellen::VarRef>,
     ) -> impl Element {
         Self {
             selected_var_refs,
-            hierarchy_and_time_table,
+            hierarchy,
         }
         .root()
     }
@@ -52,26 +53,26 @@ impl WaveformPanel {
 
     fn canvas(&self, selected_vars_panel_height: ReadOnlyMutable<u32>) -> impl Element {
         let selected_var_refs = self.selected_var_refs.clone();
-        let hierarchy_and_time_table = self.hierarchy_and_time_table.clone();
+        let hierarchy = self.hierarchy.clone();
         PixiCanvas::new(ROW_HEIGHT, ROW_GAP)
             .s(Align::new().top())
             .s(Width::fill())
             .s(Height::exact_signal(selected_vars_panel_height.signal()))
             .task_with_controller(move |controller| {
-                selected_var_refs.signal_vec().delay_remove(clone!((hierarchy_and_time_table) move |var_ref| {
-                    clone!((var_ref, hierarchy_and_time_table) async move {
-                        if let Some(hierarchy_and_time_table) = hierarchy_and_time_table.get_cloned() {
-                            platform::unload_signal(hierarchy_and_time_table.0.get(var_ref).signal_ref()).await;
+                selected_var_refs.signal_vec().delay_remove(clone!((hierarchy) move |var_ref| {
+                    clone!((var_ref, hierarchy) async move {
+                        if let Some(hierarchy) = hierarchy.get_cloned() {
+                            platform::unload_signal(hierarchy.get(var_ref).signal_ref()).await;
                         }
                     })
-                })).for_each(clone!((controller, hierarchy_and_time_table) move |vec_diff| {
-                    clone!((controller, hierarchy_and_time_table) async move {
+                })).for_each(clone!((controller, hierarchy) move |vec_diff| {
+                    clone!((controller, hierarchy) async move {
                         match vec_diff {
                             VecDiff::Replace { values } => {
                                 let controller = controller.wait_for_some_cloned().await;
                                 controller.clear_vars();
                                 for var_ref in values {
-                                    Self::push_var(&controller, &hierarchy_and_time_table, var_ref).await;
+                                    Self::push_var(&controller, &hierarchy, var_ref).await;
                                 }
                             },
                             VecDiff::InsertAt { index: _, value: _ } => { todo!("`task_with_controller` + `InsertAt`") }
@@ -84,7 +85,7 @@ impl WaveformPanel {
                             VecDiff::Move { old_index: _, new_index: _ } => { todo!("`task_with_controller` + `Move`") }
                             VecDiff::Push { value: var_ref } => {
                                 if let Some(controller) = controller.lock_ref().as_ref() {
-                                    Self::push_var(controller, &hierarchy_and_time_table, var_ref).await;
+                                    Self::push_var(controller, &hierarchy, var_ref).await;
                                 }
                             }
                             VecDiff::Pop {} => {
@@ -105,10 +106,10 @@ impl WaveformPanel {
 
     async fn push_var(
         controller: &PixiController,
-        hierarchy_and_time_table: &Mutable<Option<HierarchyAndTimeTable>>,
+        hierarchy: &Mutable<Option<Rc<wellen::Hierarchy>>>,
         var_ref: wellen::VarRef,
     ) {
-        let (hierarchy, time_table) = hierarchy_and_time_table.get_cloned().unwrap();
+        let hierarchy = hierarchy.get_cloned().unwrap();
 
         let var = hierarchy.get(var_ref);
         let signal_ref = var.signal_ref();
@@ -134,7 +135,7 @@ impl WaveformPanel {
         index: ReadOnlyMutable<Option<usize>>,
         var_ref: wellen::VarRef,
     ) -> Option<impl Element> {
-        let Some((hierarchy, _)) = self.hierarchy_and_time_table.get_cloned() else {
+        let Some(hierarchy) = self.hierarchy.get_cloned() else {
             None?
         };
         let var = hierarchy.get(var_ref);

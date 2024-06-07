@@ -17,10 +17,6 @@ pub(super) async fn get_hierarchy() -> wellen::Hierarchy {
     serde_wasm_bindgen::from_value(tauri_glue::get_hierarchy().await.unwrap_throw()).unwrap_throw()
 }
 
-pub(super) async fn get_time_table() -> wellen::TimeTable {
-    serde_wasm_bindgen::from_value(tauri_glue::get_time_table().await.unwrap_throw()).unwrap_throw()
-}
-
 pub(super) async fn load_signal_and_get_timeline(
     signal_ref: wellen::SignalRef,
     screen_width: u32,
@@ -54,9 +50,6 @@ mod tauri_glue {
 
         #[wasm_bindgen(catch)]
         pub async fn get_hierarchy() -> Result<JsValue, JsValue>;
-
-        #[wasm_bindgen(catch)]
-        pub async fn get_time_table() -> Result<JsValue, JsValue>;
 
         #[wasm_bindgen(catch)]
         pub async fn load_signal_and_get_timeline(
