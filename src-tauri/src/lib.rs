@@ -116,8 +116,8 @@ fn signal_to_timeline(
         })
         .peekable();
 
+    // @TODO parallelize?
     let mut blocks = Vec::new();
-
     while let Some((block_x, value)) = x_value_pairs.next() {
         let next_block_x = if let Some((next_block_x, _)) = x_value_pairs.peek() {
             *next_block_x
@@ -130,10 +130,13 @@ fn signal_to_timeline(
             continue;
         }
 
-        let value = value.to_string();
         // @TODO dynamic formatter
-        let value = u128::from_str_radix(&value, 2).unwrap();
-        let value = format!("{value:x}");
+        // @TODO optimize it by not using `.to_string` if possible
+        let value = value.to_string();
+        let ones_and_zeros = value.chars().rev().map(|char| char.to_digit(2).unwrap()).collect::<Vec<_>>();
+        let mut base = convert_base::Convert::new(2, 16);
+        let output = base.convert::<u32, u32>(&ones_and_zeros);
+        let value: String = output.into_iter().map(|number| char::from_digit(number, 16).unwrap()).collect();
 
         let value_width = value.chars().count() as u32 * LETTER_WIDTH;
         let label = if (value_width + (2 * LABEL_X_PADDING)) <= block_width {

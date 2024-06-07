@@ -860,6 +860,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "convert-base"
+version = "1.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e56a404f2112d00ba80a516b60ca3744ef6bd776baa14126eb7d7c11b42cac8a"
+
+[[package]]
 name = "convert_case"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1414,6 +1420,7 @@ checksum = "9fc0510504f03c51ada170672ac806f1f105a88aa97a5281117e1ddc3368e51a"
 name = "fastwave"
 version = "0.1.0"
 dependencies = [
+ "convert-base",
  "serde",
  "serde_json",
  "shared",
@@ -1499,6 +1506,7 @@ dependencies = [
 name = "frontend"
 version = "0.1.0"
 dependencies = [
+ "convert-base",
  "gloo-file",
  "shared",
  "wasm-bindgen-test",
