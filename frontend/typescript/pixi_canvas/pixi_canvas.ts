@@ -174,7 +174,7 @@ class VarSignalRow {
     }
 
     draw() {
-        // Screen can be null when we are, for instance, switching between miller column and tree layout
+        // Screen can be null when we are, for instance, switching between miller columns and tree layout
         // and then the canvas has to be recreated
         if (this.app.screen === null) {
             return;
@@ -182,6 +182,7 @@ class VarSignalRow {
 
         this.row_container_background.width = this.app.screen.width;
 
+        // @TODO optimize by reusing a pool of blocks instead or removing all children on every redraw?
         this.signal_blocks_container.removeChildren();
         this.timeline.blocks.forEach(timeline_block => {
             // signal_block

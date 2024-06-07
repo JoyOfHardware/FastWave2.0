@@ -57,3 +57,9 @@ Troubleshooting:
 1. `makers bundle`
 2. Runnable executable is in `target/release`
 3. Installable bundles specific for the platform are in `target/release/bundle`
+
+---
+
+### Test files
+
+See the folder `test_files`.
