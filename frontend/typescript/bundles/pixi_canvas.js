@@ -35135,19 +35135,27 @@ var PixiController = class {
   var_signal_rows_container = new Container();
   row_height;
   row_gap;
+  previous_parent_width;
   constructor(row_height, row_gap) {
     this.app = new Application();
     this.row_height = row_height;
     this.row_gap = row_gap;
     this.app.stage.addChild(this.var_signal_rows_container);
+    this.previous_parent_width = null;
   }
   async init(parent_element) {
     await this.app.init({ background: "DarkSlateBlue", antialias: true, resizeTo: parent_element });
     parent_element.appendChild(this.app.canvas);
   }
-  // Default automatic Pixi resizing is not reliable
-  queue_resize() {
-    this.app.queueResize();
+  // Default automatic Pixi resizing according to the parent is not reliable 
+  // and the `app.renderer`'s `resize` event is fired on every browser window size change 
+  resize(width, height) {
+    this.app.resize();
+    const width_changed = width !== this.previous_parent_width;
+    this.previous_parent_width = width;
+    if (width_changed) {
+      this.redraw_rows();
+    }
   }
   destroy() {
     const rendererDestroyOptions = {
@@ -35165,6 +35173,9 @@ var PixiController = class {
     return this.app.screen.width;
   }
   // -- FastWave-specific --
+  redraw_rows() {
+    this.var_signal_rows.forEach((row) => row.draw());
+  }
   remove_var(index) {
     if (typeof this.var_signal_rows[index] !== "undefined") {
       this.var_signal_rows[index].destroy();
@@ -35196,7 +35207,6 @@ var VarSignalRow = class {
   row_height;
   row_gap;
   row_height_with_gap;
-  renderer_resize_callback = () => this.draw();
   row_container = new Container();
   row_container_background;
   signal_blocks_container = new Container();
@@ -35226,6 +35236,10 @@ var VarSignalRow = class {
     this.row_container.addChild(this.signal_blocks_container);
     this.draw();
   }
+  redraw(timeline) {
+    this.timeline = timeline;
+    this.draw();
+  }
   draw() {
     this.row_container_background.width = this.app.screen.width;
     this.signal_blocks_container.removeChildren();
@@ -35251,7 +35265,6 @@ var VarSignalRow = class {
     this.row_container.y -= this.row_height_with_gap;
   }
   destroy() {
-    this.app.renderer.off("resize", this.renderer_resize_callback);
     this.owner.splice(this.index_in_owner, 1);
     this.rows_container.removeChildAt(this.index_in_owner);
     this.row_container.destroy(true);

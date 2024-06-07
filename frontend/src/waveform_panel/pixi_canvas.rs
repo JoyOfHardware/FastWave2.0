@@ -35,12 +35,12 @@ impl PixiCanvas {
         let height = Mutable::new(0);
         let resize_task = Task::start_droppable(
             map_ref! {
-                let _ = width.signal(),
-                let _ = height.signal() => ()
+                let width = width.signal(),
+                let height = height.signal() => (*width, *height)
             }
-            .for_each_sync(clone!((controller) move |_| {
+            .for_each_sync(clone!((controller) move |(width, height)| {
                 if let Some(controller) = controller.lock_ref().as_ref() {
-                    controller.queue_resize();
+                    controller.resize(width, height);
                 }
             })),
         );
@@ -101,7 +101,7 @@ mod js_bridge {
         pub async fn init(this: &PixiController, parent_element: &JsValue);
 
         #[wasm_bindgen(method)]
-        pub fn queue_resize(this: &PixiController);
+        pub fn resize(this: &PixiController, width: u32, height: u32);
 
         #[wasm_bindgen(method)]
         pub fn destroy(this: &PixiController);
