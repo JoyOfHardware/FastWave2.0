@@ -1,6 +1,6 @@
 use crate::{platform, HierarchyAndTimeTable};
 use wellen::GetItem;
-use zoon::{eprintln, *};
+use zoon::*;
 
 mod pixi_canvas;
 use pixi_canvas::{PixiCanvas, PixiController};
@@ -109,10 +109,6 @@ impl WaveformPanel {
         var_ref: wellen::VarRef,
     ) {
         let (hierarchy, time_table) = hierarchy_and_time_table.get_cloned().unwrap();
-        if time_table.is_empty() {
-            eprintln!("timetable is empty");
-            return;
-        }
 
         let var = hierarchy.get(var_ref);
         let signal_ref = var.signal_ref();
@@ -128,7 +124,9 @@ impl WaveformPanel {
         zoon::println!("{timescale:?}");
 
         // Note: Sync `timeline`'s type with the `Timeline` in `frontend/typescript/pixi_canvas/pixi_canvas.ts'
-        controller.push_var(serde_wasm_bindgen::to_value(&timeline).unwrap_throw());
+        let timeline = serde_wasm_bindgen::to_value(&timeline).unwrap_throw(); 
+        let signal_ref_index = signal_ref.index();
+        controller.push_var(signal_ref_index, timeline);
     }
 
     fn selected_var_panel(
