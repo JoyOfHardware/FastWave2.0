@@ -46,14 +46,13 @@ export class PixiController {
     // Default automatic Pixi resizing according to the parent is not reliable 
     // and the `app.renderer`'s `resize` event is fired on every browser window size change 
     async resize(width: number, height: number) {
+        this.app.resize();
         // -- FastWave-specific --
         const width_changed = width !== this.previous_parent_width;
         this.previous_parent_width = width;
         if (width_changed) {
             await this.redraw_rows();
         }
-        // -- // --
-        this.app.resize();
     }
 
     destroy() {
