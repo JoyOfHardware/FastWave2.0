@@ -40,20 +40,13 @@ async fn get_hierarchy(store: tauri::State<'_, Store>) -> Result<serde_json::Val
 }
 
 #[tauri::command(rename_all = "snake_case")]
-async fn get_time_table(store: tauri::State<'_, Store>) -> Result<serde_json::Value, ()> {
-    let waveform = store.waveform.lock().unwrap();
-    let time_table = waveform.as_ref().unwrap().time_table();
-    Ok(serde_json::to_value(time_table).unwrap())
-}
-
-#[tauri::command(rename_all = "snake_case")]
 async fn load_signal_and_get_timeline(
     signal_ref_index: usize,
     screen_width: u32,
     block_height: u32,
     store: tauri::State<'_, Store>,
 ) -> Result<serde_json::Value, ()> {
-    // @TODO run (all?) in a blocking thread
+    // @TODO run (all?) in a blocking thread?
     let signal_ref = wellen::SignalRef::from_index(signal_ref_index).unwrap();
     let mut waveform_lock = store.waveform.lock().unwrap();
     let waveform = waveform_lock.as_mut().unwrap();
@@ -88,7 +81,6 @@ pub fn run() {
             show_window,
             pick_and_load_waveform,
             get_hierarchy,
-            get_time_table,
             load_signal_and_get_timeline,
             unload_signal,
         ])

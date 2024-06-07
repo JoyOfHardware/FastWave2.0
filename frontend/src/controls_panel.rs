@@ -1,5 +1,4 @@
-use crate::{platform, HierarchyAndTimeTable, Layout};
-use futures_util::join;
+use crate::{platform, Layout};
 use std::cell::Cell;
 use std::mem;
 use std::ops::Not;
@@ -35,7 +34,7 @@ struct ScopeForUI {
 #[derive(Clone)]
 pub struct ControlsPanel {
     selected_scope_ref: Mutable<Option<wellen::ScopeRef>>,
-    hierarchy_and_time_table: Mutable<Option<HierarchyAndTimeTable>>,
+    hierarchy: Mutable<Option<Rc<wellen::Hierarchy>>>,
     selected_var_refs: MutableVec<wellen::VarRef>,
     layout: Mutable<Layout>,
     loaded_filename: Mutable<Option<Filename>>,
@@ -43,13 +42,13 @@ pub struct ControlsPanel {
 
 impl ControlsPanel {
     pub fn new(
-        hierarchy_and_time_table: Mutable<Option<HierarchyAndTimeTable>>,
+        hierarchy: Mutable<Option<Rc<wellen::Hierarchy>>>,
         selected_var_refs: MutableVec<wellen::VarRef>,
         layout: Mutable<Layout>,
     ) -> impl Element {
         Self {
             selected_scope_ref: <_>::default(),
-            hierarchy_and_time_table,
+            hierarchy,
             selected_var_refs,
             layout,
             loaded_filename: <_>::default(),
@@ -60,7 +59,7 @@ impl ControlsPanel {
     fn triggers(&self) -> Vec<TaskHandle> {
         vec![Task::start_droppable(clone!((self => s) async move {
             let was_some = Cell::new(false);
-            s.hierarchy_and_time_table
+            s.hierarchy
                 .signal_ref(Option::is_some)
                 .dedupe()
                 .for_each_sync(clone!((s) move |is_some| {
@@ -81,8 +80,8 @@ impl ControlsPanel {
         let layout = self.layout.clone();
         let layout_and_hierarchy_signal = map_ref! {
             let layout = layout.signal(),
-            let hierarchy_and_time_table = self.hierarchy_and_time_table.signal_cloned() => {
-                (*layout, hierarchy_and_time_table.clone().map(|(hierarchy, _)| hierarchy))
+            let hierarchy = self.hierarchy.signal_cloned() => {
+                (*layout, hierarchy.clone())
             }
         };
         Column::new()
@@ -110,9 +109,9 @@ impl ControlsPanel {
                     .item(self.layout_switcher()),
             )
             .item_signal(
-                self.hierarchy_and_time_table
+                self.hierarchy
                     .signal_cloned()
-                    .map_some(clone!((self => s) move |(hierarchy, _)| s.scopes_panel(hierarchy))),
+                    .map_some(clone!((self => s) move |hierarchy| s.scopes_panel(hierarchy))),
             )
             .item_signal(layout_and_hierarchy_signal.map(
                 clone!((self => s) move |(layout, hierarchy)| {
@@ -126,7 +125,7 @@ impl ControlsPanel {
     #[cfg(FASTWAVE_PLATFORM = "TAURI")]
     fn load_button(&self) -> impl Element {
         let (hovered, hovered_signal) = Mutable::new_and_signal(false);
-        let hierarchy_and_time_table = self.hierarchy_and_time_table.clone();
+        let hierarchy = self.hierarchy.clone();
         let loaded_filename = self.loaded_filename.clone();
         Button::new()
             .s(Padding::new().x(20).y(10))
@@ -143,21 +142,18 @@ impl ControlsPanel {
             ))
             .on_hovered_change(move |is_hovered| hovered.set_neq(is_hovered))
             .on_press(move || {
-                let mut hierarchy_and_time_table_lock = hierarchy_and_time_table.lock_mut();
-                if hierarchy_and_time_table_lock.is_some() {
-                    *hierarchy_and_time_table_lock = None;
+                let mut hierarchy_lock = hierarchy.lock_mut();
+                if hierarchy_lock.is_some() {
+                    *hierarchy_lock = None;
                     return;
                 }
-                drop(hierarchy_and_time_table_lock);
-                let hierarchy_and_time_table = hierarchy_and_time_table.clone();
+                drop(hierarchy_lock);
+                let hierarchy = hierarchy.clone();
                 let loaded_filename = loaded_filename.clone();
                 Task::start(async move {
                     if let Some(filename) = platform::pick_and_load_waveform(None).await {
                         loaded_filename.set_neq(Some(filename));
-                        let (hierarchy, time_table) =
-                            join!(platform::get_hierarchy(), platform::get_time_table());
-                        hierarchy_and_time_table
-                            .set(Some((Rc::new(hierarchy), Rc::new(time_table))))
+                        hierarchy.set(Some(Rc::new(platform::get_hierarchy().await)))
                     }
                 })
             })
@@ -166,7 +162,7 @@ impl ControlsPanel {
     #[cfg(FASTWAVE_PLATFORM = "BROWSER")]
     fn load_button(&self) -> impl Element {
         let (hovered, hovered_signal) = Mutable::new_and_signal(false);
-        let hierarchy_and_time_table = self.hierarchy_and_time_table.clone();
+        let hierarchy = self.hierarchy.clone();
         let loaded_filename = self.loaded_filename.clone();
         let file_input_id = "file_input";
         Row::new()
@@ -187,10 +183,10 @@ impl ControlsPanel {
                     ))
                     .on_hovered_change(move |is_hovered| hovered.set_neq(is_hovered))
                     .for_input(file_input_id)
-                    .on_click_event_with_options(EventOptions::new().preventable(), clone!((hierarchy_and_time_table) move |event| {
-                        let mut hierarchy_and_time_table_lock = hierarchy_and_time_table.lock_mut();
-                        if hierarchy_and_time_table_lock.is_some() {
-                            *hierarchy_and_time_table_lock = None;
+                    .on_click_event_with_options(EventOptions::new().preventable(), clone!((hierarchy) move |event| {
+                        let mut hierarchy_lock = hierarchy.lock_mut();
+                        if hierarchy_lock.is_some() {
+                            *hierarchy_lock = None;
                             if let RawMouseEvent::Click(raw_event) = event.raw_event {
                                 // @TODO Move to MoonZoon as a new API
                                 raw_event.prevent_default();
@@ -218,14 +214,14 @@ impl ControlsPanel {
                                     zoon::println!("file list is empty");
                                     return;
                                 };
-                                let hierarchy_and_time_table = hierarchy_and_time_table.clone();
+                                let hierarchy = hierarchy.clone();
                                 let loaded_filename = loaded_filename.clone();
                                 Task::start(async move {
                                     if let Some(filename) = platform::pick_and_load_waveform(Some(file)).await {
                                         loaded_filename.set_neq(Some(filename));
                                         let (hierarchy, time_table) =
                                             join!(platform::get_hierarchy(), platform::get_time_table());
-                                        hierarchy_and_time_table
+                                        hierarchy
                                             .set(Some((Rc::new(hierarchy), Rc::new(time_table))))
                                     }
                                 })

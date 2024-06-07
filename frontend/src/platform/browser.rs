@@ -74,13 +74,6 @@ pub(super) async fn get_hierarchy() -> wellen::Hierarchy {
     serde_json::from_value(serde_json::to_value(hierarchy).unwrap_throw()).unwrap_throw()
 }
 
-pub(super) async fn get_time_table() -> wellen::TimeTable {
-    let waveform = STORE.waveform.lock().unwrap_throw();
-    let time_table = waveform.as_ref().unwrap_throw().time_table();
-    // @TODO Wrap `time_table` in `Waveform` with `Rc/Arc` or add the method `take` / `clone` or refactor?
-    serde_json::from_value(serde_json::to_value(time_table).unwrap_throw()).unwrap_throw()
-}
-
 pub(super) async fn load_signal_and_get_timeline(
     signal_ref: wellen::SignalRef,
     screen_width: u32,
