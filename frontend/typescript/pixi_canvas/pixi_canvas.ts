@@ -23,6 +23,7 @@ export class PixiController {
     var_signal_rows_container = new Container();
     row_height: number;
     row_gap: number;
+    previous_parent_width: number | null;
 
     constructor(row_height: number, row_gap: number) {
         this.app = new Application();
@@ -30,6 +31,7 @@ export class PixiController {
         this.row_height = row_height;
         this.row_gap = row_gap;
         this.app.stage.addChild(this.var_signal_rows_container);
+        this.previous_parent_width = null;
     }
 
     async init(parent_element: HTMLElement) {
@@ -37,9 +39,16 @@ export class PixiController {
         parent_element.appendChild(this.app.canvas);
     }
 
-    // Default automatic Pixi resizing is not reliable
-    queue_resize() {
-        this.app.queueResize();
+    // Default automatic Pixi resizing according to the parent is not reliable 
+    // and the `app.renderer`'s `resize` event is fired on every browser window size change 
+    resize(width: number, height: number) {
+        this.app.resize();
+        // -- FastWave-specific --
+        const width_changed = width !== this.previous_parent_width;
+        this.previous_parent_width = width;
+        if (width_changed) {
+            this.redraw_rows();
+        }
     }
 
     destroy() {
@@ -60,6 +69,10 @@ export class PixiController {
     }
 
     // -- FastWave-specific --
+
+    redraw_rows() {
+        this.var_signal_rows.forEach(row => row.draw());
+    }
 
     remove_var(index: number) {
         if (typeof this.var_signal_rows[index] !== 'undefined') {
@@ -96,7 +109,6 @@ class VarSignalRow {
     row_height: number;
     row_gap: number;
     row_height_with_gap: number;
-    renderer_resize_callback = () => this.draw();
     row_container = new Container();
     row_container_background: Sprite;
     signal_blocks_container = new Container();
@@ -144,11 +156,11 @@ class VarSignalRow {
         this.row_container.addChild(this.signal_blocks_container);
 
         this.draw();
-        // this.app.renderer.on("resize", (width, height) => { 
-        //     // @TODO only on `width` change
-        //     // @TODO inline `renderer_resize_callback`?
-        //     this.draw();
-        // });
+    }
+
+    redraw(timeline: Timeline) {
+        this.timeline = timeline;
+        this.draw();
     }
 
     draw() {
@@ -186,7 +198,6 @@ class VarSignalRow {
     }
 
     destroy() {
-        this.app.renderer.off("resize", this.renderer_resize_callback);
         this.owner.splice(this.index_in_owner, 1);
         this.rows_container.removeChildAt(this.index_in_owner);
         this.row_container.destroy(true);
