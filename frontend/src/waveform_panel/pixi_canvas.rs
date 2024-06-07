@@ -40,11 +40,12 @@ impl PixiCanvas {
                 let width = width.signal(),
                 let height = height.signal() => (*width, *height)
             }
-            .for_each_sync(clone!((controller) move |(width, height)| {
+            .throttle(|| Timer::sleep(50))
+            .for_each(clone!((controller) move |(width, height)| clone!((controller) async move {
                 if let Some(controller) = controller.lock_ref().as_ref() {
-                    controller.resize(width, height);
+                    controller.resize(width, height).await
                 }
-            })),
+            }))),
         );
         let task_with_controller = Mutable::new(None);
         // -- FastWave-specific --
@@ -120,7 +121,7 @@ mod js_bridge {
         pub async fn init(this: &PixiController, parent_element: &JsValue);
 
         #[wasm_bindgen(method)]
-        pub fn resize(this: &PixiController, width: u32, height: u32);
+        pub async fn resize(this: &PixiController, width: u32, height: u32);
 
         #[wasm_bindgen(method)]
         pub fn destroy(this: &PixiController);

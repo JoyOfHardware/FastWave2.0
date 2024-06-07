@@ -45,13 +45,13 @@ export class PixiController {
 
     // Default automatic Pixi resizing according to the parent is not reliable 
     // and the `app.renderer`'s `resize` event is fired on every browser window size change 
-    resize(width: number, height: number) {
+    async resize(width: number, height: number) {
         this.app.resize();
         // -- FastWave-specific --
         const width_changed = width !== this.previous_parent_width;
         this.previous_parent_width = width;
         if (width_changed) {
-            this.redraw_rows();
+            await this.redraw_rows();
         }
     }
 
@@ -74,11 +74,11 @@ export class PixiController {
 
     // -- FastWave-specific --
 
-    redraw_rows() {
-        this.var_signal_rows.forEach(async row => { 
+    async redraw_rows() {
+        await Promise.all(this.var_signal_rows.map(async row => { 
             const timeline = await this.timeline_getter(row.signal_ref_index, this.app.screen.width, this.row_height);
             row.redraw(timeline);
-        });
+        }))
     }
 
     remove_var(index: number) {
