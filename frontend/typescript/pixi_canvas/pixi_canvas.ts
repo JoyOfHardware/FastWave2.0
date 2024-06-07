@@ -16,6 +16,8 @@ type TimeLineBlockLabel = {
     y: number,
 }
 
+type TimelineGetter = (signal_ref_index: number, screen_width: number, row_height: number) => Promise<Timeline>;
+
 export class PixiController {
     app: Application
     // -- FastWave-specific --
@@ -24,14 +26,16 @@ export class PixiController {
     row_height: number;
     row_gap: number;
     previous_parent_width: number | null;
+    timeline_getter: TimelineGetter
 
-    constructor(row_height: number, row_gap: number) {
+    constructor(row_height: number, row_gap: number, timeline_getter: TimelineGetter) {
         this.app = new Application();
         // -- FastWave-specific --
         this.row_height = row_height;
         this.row_gap = row_gap;
         this.app.stage.addChild(this.var_signal_rows_container);
         this.previous_parent_width = null;
+        this.timeline_getter = timeline_getter;
     }
 
     async init(parent_element: HTMLElement) {
@@ -71,7 +75,10 @@ export class PixiController {
     // -- FastWave-specific --
 
     redraw_rows() {
-        this.var_signal_rows.forEach(row => row.draw());
+        this.var_signal_rows.forEach(async row => { 
+            const timeline = await this.timeline_getter(row.signal_ref_index, this.app.screen.width, this.row_height);
+            row.redraw(timeline);
+        });
     }
 
     remove_var(index: number) {
@@ -80,8 +87,9 @@ export class PixiController {
         }
     }
 
-    push_var(timeline: Timeline) {
+    push_var(signal_ref_index: number, timeline: Timeline) {
         new VarSignalRow(
+            signal_ref_index,
             timeline,
             this.app,
             this.var_signal_rows,
@@ -101,8 +109,9 @@ export class PixiController {
 }
 
 class VarSignalRow {
-    app: Application;
+    signal_ref_index: number;
     timeline: Timeline;
+    app: Application;
     owner: Array<VarSignalRow>;
     index_in_owner: number;
     rows_container: Container;
@@ -120,6 +129,7 @@ class VarSignalRow {
     });    
 
     constructor(
+        signal_ref_index: number,
         timeline: Timeline,
         app: Application,
         owner: Array<VarSignalRow>, 
@@ -127,9 +137,9 @@ class VarSignalRow {
         row_height: number,
         row_gap: number,
     ) {
-        this.app = app;
-
+        this.signal_ref_index = signal_ref_index;
         this.timeline = timeline;
+        this.app = app;
 
         this.row_height = row_height;
         this.row_gap = row_gap;
@@ -164,6 +174,12 @@ class VarSignalRow {
     }
 
     draw() {
+        // Screen can be null when we are, for instance, switching between miller column and tree layout
+        // and then the canvas has to be recreated
+        if (this.app.screen === null) {
+            return;
+        }
+
         this.row_container_background.width = this.app.screen.width;
 
         this.signal_blocks_container.removeChildren();

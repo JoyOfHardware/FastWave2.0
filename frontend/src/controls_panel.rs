@@ -99,7 +99,6 @@ impl ControlsPanel {
                     Layout::Columns => Height::fill().max(MILLER_COLUMN_MAX_HEIGHT),
                 },
             )))
-            .s(Scrollbars::both())
             .s(Padding::all(20))
             .s(Gap::new().y(40))
             .s(Align::new().top())

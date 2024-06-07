@@ -35136,12 +35136,14 @@ var PixiController = class {
   row_height;
   row_gap;
   previous_parent_width;
-  constructor(row_height, row_gap) {
+  timeline_getter;
+  constructor(row_height, row_gap, timeline_getter) {
     this.app = new Application();
     this.row_height = row_height;
     this.row_gap = row_gap;
     this.app.stage.addChild(this.var_signal_rows_container);
     this.previous_parent_width = null;
+    this.timeline_getter = timeline_getter;
   }
   async init(parent_element) {
     await this.app.init({ background: "DarkSlateBlue", antialias: true, resizeTo: parent_element });
@@ -35174,15 +35176,19 @@ var PixiController = class {
   }
   // -- FastWave-specific --
   redraw_rows() {
-    this.var_signal_rows.forEach((row) => row.draw());
+    this.var_signal_rows.forEach(async (row) => {
+      const timeline = await this.timeline_getter(row.signal_ref_index, this.app.screen.width, this.row_height);
+      row.redraw(timeline);
+    });
   }
   remove_var(index) {
     if (typeof this.var_signal_rows[index] !== "undefined") {
       this.var_signal_rows[index].destroy();
     }
   }
-  push_var(timeline) {
+  push_var(signal_ref_index, timeline) {
     new VarSignalRow(
+      signal_ref_index,
       timeline,
       this.app,
       this.var_signal_rows,
@@ -35199,8 +35205,9 @@ var PixiController = class {
   }
 };
 var VarSignalRow = class {
-  app;
+  signal_ref_index;
   timeline;
+  app;
   owner;
   index_in_owner;
   rows_container;
@@ -35216,9 +35223,10 @@ var VarSignalRow = class {
     fontSize: 16,
     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"'
   });
-  constructor(timeline, app, owner, rows_container, row_height, row_gap) {
-    this.app = app;
+  constructor(signal_ref_index, timeline, app, owner, rows_container, row_height, row_gap) {
+    this.signal_ref_index = signal_ref_index;
     this.timeline = timeline;
+    this.app = app;
     this.row_height = row_height;
     this.row_gap = row_gap;
     this.row_height_with_gap = row_height + row_gap;
@@ -35241,6 +35249,9 @@ var VarSignalRow = class {
     this.draw();
   }
   draw() {
+    if (this.app.screen === null) {
+      return;
+    }
     this.row_container_background.width = this.app.screen.width;
     this.signal_blocks_container.removeChildren();
     this.timeline.blocks.forEach((timeline_block) => {
