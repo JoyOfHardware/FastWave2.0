@@ -10,6 +10,7 @@ publish.workspace = true
 [dependencies]
 wellen.workspace = true
 moonlight.workspace = true
+convert-base = "1.1.2"
 # @TODO update `futures_util_ext` - add feature `sink`, set exact `futures-util` version
 futures-util = { version = "0.3.30", features = ["sink"] }
 

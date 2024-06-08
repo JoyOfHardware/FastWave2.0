@@ -170,7 +170,8 @@ impl ControlsPanel {
                 Label::new()
                     .s(Padding::new().x(20).y(10))
                     .s(Background::new().color_signal(
-                        hovered_signal.map_bool(|| color!("MediumSlateBlue"), || color!("SlateBlue")),
+                        hovered_signal
+                            .map_bool(|| color!("MediumSlateBlue"), || color!("SlateBlue")),
                     ))
                     .s(Align::new().left())
                     .s(RoundedCorners::all(15))
@@ -183,47 +184,52 @@ impl ControlsPanel {
                     ))
                     .on_hovered_change(move |is_hovered| hovered.set_neq(is_hovered))
                     .for_input(file_input_id)
-                    .on_click_event_with_options(EventOptions::new().preventable(), clone!((hierarchy) move |event| {
-                        let mut hierarchy_lock = hierarchy.lock_mut();
-                        if hierarchy_lock.is_some() {
-                            *hierarchy_lock = None;
-                            if let RawMouseEvent::Click(raw_event) = event.raw_event {
-                                // @TODO Move to MoonZoon as a new API
-                                raw_event.prevent_default();
+                    .on_click_event_with_options(
+                        EventOptions::new().preventable(),
+                        clone!((hierarchy) move |event| {
+                            let mut hierarchy_lock = hierarchy.lock_mut();
+                            if hierarchy_lock.is_some() {
+                                *hierarchy_lock = None;
+                                if let RawMouseEvent::Click(raw_event) = event.raw_event {
+                                    // @TODO Move to MoonZoon as a new API
+                                    raw_event.prevent_default();
+                                }
+                                return;
                             }
-                            return;
-                        }
-                    }))
+                        }),
+                    ),
             )
             .item(
                 // @TODO https://github.com/MoonZoon/MoonZoon/issues/39
                 // + https://developer.mozilla.org/en-US/docs/Web/API/File_API/Using_files_from_web_applications#using_hidden_file_input_elements_using_the_click_method
-                TextInput::new()
-                    .id(file_input_id)
-                    .update_raw_el(|raw_el| {
-                        let dom_element = raw_el.dom_element();
-                        raw_el
-                            .style("display", "none")
-                            .attr("type", "file")
-                            .event_handler(move |_: events::Input| {
-                                let Some(file_list) = dom_element.files().map(gloo_file::FileList::from) else {
-                                    zoon::println!("file list is `None`");
-                                    return;
-                                };
-                                let Some(file) = file_list.first().cloned() else {
-                                    zoon::println!("file list is empty");
-                                    return;
-                                };
-                                let hierarchy = hierarchy.clone();
-                                let loaded_filename = loaded_filename.clone();
-                                Task::start(async move {
-                                    if let Some(filename) = platform::pick_and_load_waveform(Some(file)).await {
-                                        loaded_filename.set_neq(Some(filename));
-                                        hierarchy.set(Some(Rc::new(platform::get_hierarchy().await)))
-                                    }
-                                })
+                TextInput::new().id(file_input_id).update_raw_el(|raw_el| {
+                    let dom_element = raw_el.dom_element();
+                    raw_el
+                        .style("display", "none")
+                        .attr("type", "file")
+                        .event_handler(move |_: events::Input| {
+                            let Some(file_list) =
+                                dom_element.files().map(gloo_file::FileList::from)
+                            else {
+                                zoon::println!("file list is `None`");
+                                return;
+                            };
+                            let Some(file) = file_list.first().cloned() else {
+                                zoon::println!("file list is empty");
+                                return;
+                            };
+                            let hierarchy = hierarchy.clone();
+                            let loaded_filename = loaded_filename.clone();
+                            Task::start(async move {
+                                if let Some(filename) =
+                                    platform::pick_and_load_waveform(Some(file)).await
+                                {
+                                    loaded_filename.set_neq(Some(filename));
+                                    hierarchy.set(Some(Rc::new(platform::get_hierarchy().await)))
+                                }
+                            })
                         })
-                    })
+                }),
             )
     }
 

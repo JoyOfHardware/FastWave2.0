@@ -126,7 +126,7 @@ impl WaveformPanel {
         zoon::println!("{timescale:?}");
 
         // Note: Sync `timeline`'s type with the `Timeline` in `frontend/typescript/pixi_canvas/pixi_canvas.ts'
-        let timeline = serde_wasm_bindgen::to_value(&timeline).unwrap_throw(); 
+        let timeline = serde_wasm_bindgen::to_value(&timeline).unwrap_throw();
         let signal_ref_index = signal_ref.index();
         controller.push_var(signal_ref_index, timeline);
     }
@@ -140,23 +140,56 @@ impl WaveformPanel {
             None?
         };
         let var = hierarchy.get(var_ref);
-        let name: &str = var.name(&hierarchy);
+        Row::new()
+            .item(self.selected_var_name_button(var.name(&hierarchy), index))
+            .item(self.selected_var_format_button())
+            .apply(Some)
+    }
+
+    fn selected_var_name_button(
+        &self,
+        name: &str,
+        index: ReadOnlyMutable<Option<usize>>,
+    ) -> impl Element {
         let selected_var_refs = self.selected_var_refs.clone();
+        let (hovered, hovered_signal) = Mutable::new_and_signal(false);
         Button::new()
             .s(Height::exact(ROW_HEIGHT))
-            .s(Background::new().color(color!("SlateBlue", 0.8)))
-            .s(RoundedCorners::new().left(15))
+            .s(Background::new().color_signal(
+                hovered_signal.map_bool(|| color!("SlateBlue"), || color!("SlateBlue", 0.8)),
+            ))
+            .s(RoundedCorners::new().left(15).right(5))
             .label(
                 El::new()
                     .s(Align::center())
                     .s(Padding::new().left(20).right(17).y(10))
                     .child(name),
             )
+            .on_hovered_change(move |is_hovered| hovered.set_neq(is_hovered))
             .on_press(move || {
                 if let Some(index) = index.get() {
                     selected_var_refs.lock_mut().remove(index);
                 }
             })
-            .apply(Some)
+    }
+
+    fn selected_var_format_button(&self) -> impl Element {
+        let var_format = Mutable::new(shared::VarFormat::default());
+        let (hovered, hovered_signal) = Mutable::new_and_signal(false);
+        Button::new()
+            .s(Height::exact(ROW_HEIGHT))
+            .s(Width::exact(70))
+            .s(Background::new().color_signal(
+                hovered_signal.map_bool(|| color!("SlateBlue"), || color!("SlateBlue", 0.8)),
+            ))
+            .s(RoundedCorners::new().left(5))
+            .label(
+                El::new()
+                    .s(Align::center())
+                    .s(Padding::new().left(20).right(17).y(10))
+                    .child_signal(var_format.signal().map(|format| format.as_static_str())),
+            )
+            .on_hovered_change(move |is_hovered| hovered.set_neq(is_hovered))
+            .on_press(move || var_format.update(|format| format.next()))
     }
 }
