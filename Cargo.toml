@@ -16,7 +16,6 @@ readme = "../README.md"
 publish = false
 
 [workspace.dependencies]
-convert-base = "1.1.2"
 # wellen = { version = "0.9.9", features = ["serde1"] }
 # wellen = { path = "../wellen/wellen", features = ["serde1"] }
 wellen = { git = "https://github.com/MartinKavik/wellen", features = ["serde1"], branch = "new_pub_types" }

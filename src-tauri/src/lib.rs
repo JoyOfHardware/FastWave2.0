@@ -131,13 +131,7 @@ fn signal_to_timeline(
             continue;
         }
 
-        // @TODO dynamic formatter
-        // @TODO optimize it by not using `.to_string` if possible
-        let value = value.to_string();
-        let ones_and_zeros = value.chars().rev().map(|char| char.to_digit(2).unwrap()).collect::<Vec<_>>();
-        let mut base = convert_base::Convert::new(2, 16);
-        let output = base.convert::<u32, u32>(&ones_and_zeros);
-        let value: String = output.into_iter().map(|number| char::from_digit(number, 16).unwrap()).collect();
+        let value = shared::VarFormat::default().format(value);
 
         let value_width = value.chars().count() as u32 * LETTER_WIDTH;
         let label = if (value_width + (2 * LABEL_X_PADDING)) <= block_width {

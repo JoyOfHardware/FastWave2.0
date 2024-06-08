@@ -1,5 +1,5 @@
-use zoon::*;
 use std::rc::Rc;
+use zoon::*;
 
 mod platform;
 
@@ -42,13 +42,22 @@ fn root() -> impl Element {
                     selected_var_refs.clone(),
                     layout.clone(),
                 ))
-                .item_signal(layout.signal().map(|layout| matches!(layout, Layout::Tree)).map_true(clone!((hierarchy, selected_var_refs) move || WaveformPanel::new(
-                    hierarchy.clone(),
-                    selected_var_refs.clone(),
-                ))))
+                .item_signal(
+                    layout
+                        .signal()
+                        .map(|layout| matches!(layout, Layout::Tree))
+                        .map_true(
+                            clone!((hierarchy, selected_var_refs) move || WaveformPanel::new(
+                                hierarchy.clone(),
+                                selected_var_refs.clone(),
+                            )),
+                        ),
+                ),
         )
-        .item_signal(layout.signal().map(|layout| matches!(layout, Layout::Columns)).map_true(move || WaveformPanel::new(
-            hierarchy.clone(),
-            selected_var_refs.clone(),
-        )))
+        .item_signal(
+            layout
+                .signal()
+                .map(|layout| matches!(layout, Layout::Columns))
+                .map_true(move || WaveformPanel::new(hierarchy.clone(), selected_var_refs.clone())),
+        )
 }

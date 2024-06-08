@@ -1,5 +1,8 @@
 use moonlight::*;
 
+mod var_format;
+pub use var_format::VarFormat;
+
 pub mod wellen_helpers;
 
 #[derive(Serialize, Deserialize, Debug, Default)]

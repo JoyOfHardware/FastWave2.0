@@ -1,7 +1,7 @@
-pub use js_bridge::PixiController;
-use zoon::*;
-use std::rc::Rc;
 use crate::platform;
+pub use js_bridge::PixiController;
+use std::rc::Rc;
+use zoon::*;
 
 pub struct PixiCanvas {
     raw_el: RawHtmlEl<web_sys::HtmlElement>,
@@ -41,22 +41,31 @@ impl PixiCanvas {
                 let height = height.signal() => (*width, *height)
             }
             .throttle(|| Timer::sleep(50))
-            .for_each(clone!((controller) move |(width, height)| clone!((controller) async move {
-                if let Some(controller) = controller.lock_ref().as_ref() {
-                    controller.resize(width, height).await
-                }
-            }))),
+            .for_each(
+                clone!((controller) move |(width, height)| clone!((controller) async move {
+                    if let Some(controller) = controller.lock_ref().as_ref() {
+                        controller.resize(width, height).await
+                    }
+                })),
+            ),
         );
         let task_with_controller = Mutable::new(None);
         // -- FastWave-specific --
-        let timeline_getter = Rc::new(Closure::new(|signal_ref_index, screen_width, row_height| {
-            future_to_promise(async move {
-                let signal_ref = wellen::SignalRef::from_index(signal_ref_index).unwrap_throw();
-                let timeline = platform::load_signal_and_get_timeline(signal_ref, screen_width, row_height).await;
-                let timeline = serde_wasm_bindgen::to_value(&timeline).unwrap_throw(); 
-                Ok(timeline)
-            })
-        }));
+        let timeline_getter = Rc::new(Closure::new(
+            |signal_ref_index, screen_width, row_height| {
+                future_to_promise(async move {
+                    let signal_ref = wellen::SignalRef::from_index(signal_ref_index).unwrap_throw();
+                    let timeline = platform::load_signal_and_get_timeline(
+                        signal_ref,
+                        screen_width,
+                        row_height,
+                    )
+                    .await;
+                    let timeline = serde_wasm_bindgen::to_value(&timeline).unwrap_throw();
+                    Ok(timeline)
+                })
+            },
+        ));
         // -- // --
         Self {
             controller: controller.read_only(),
@@ -105,7 +114,8 @@ mod js_bridge {
     type SignalRefIndex = usize;
     type ScreenWidth = u32;
     type RowHeight = u32;
-    type TimelineGetter = Closure<dyn FnMut(SignalRefIndex, ScreenWidth, RowHeight) -> TimelinePromise>;
+    type TimelineGetter =
+        Closure<dyn FnMut(SignalRefIndex, ScreenWidth, RowHeight) -> TimelinePromise>;
 
     // Note: Add all corresponding methods to `frontend/typescript/pixi_canvas/pixi_canvas.ts`
     #[wasm_bindgen(module = "/typescript/bundles/pixi_canvas.js")]
@@ -115,7 +125,11 @@ mod js_bridge {
 
         // @TODO `row_height` and `row_gap` is FastWave-specific
         #[wasm_bindgen(constructor)]
-        pub fn new(row_height: u32, row_gap: u32, timeline_getter: &TimelineGetter) -> PixiController;
+        pub fn new(
+            row_height: u32,
+            row_gap: u32,
+            timeline_getter: &TimelineGetter,
+        ) -> PixiController;
 
         #[wasm_bindgen(method)]
         pub async fn init(this: &PixiController, parent_element: &JsValue);
