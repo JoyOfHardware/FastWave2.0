@@ -15,8 +15,10 @@ origins = ["*"]
 frontend = [
     "public",
     "frontend/Cargo.toml",
-    "frontend/typescript/bundles",
     "frontend/src",
+    "frontend/typescript/bundles",
+    "shared/Cargo.toml",
+    "shared/src",
 ]
 backend = [
     "backend/Cargo.toml",
