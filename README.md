@@ -22,7 +22,7 @@
 
 ___
 
-### Start:
+### Start the desktop version:
 
 1. `makers start`
 
@@ -39,9 +39,24 @@ Troubleshooting:
 
 ---
 
-### Start in the browser:
+### Production build of the desktop version:
+
+1. `makers bundle`
+2. Runnable executable is in `target/release`
+3. Installable bundles specific for the platform are in `target/release/bundle`
+
+---
+
+### Start in a browser:
 
 1. `makers start_browser`
+2. Ctrl + Click the server URL mentioned in the terminal log 
+
+---
+
+### Start in a browser in the release mode:
+
+1. `makers start_browser_release`
 2. Ctrl + Click the server URL mentioned in the terminal log 
 
 ---
@@ -50,15 +65,7 @@ Troubleshooting:
 
 1. `makers format`
 
----
 
-### Production build:
-
-1. `makers bundle`
-2. Runnable executable is in `target/release`
-3. Installable bundles specific for the platform are in `target/release/bundle`
-
----
 
 ### Test files
 

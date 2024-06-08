@@ -79,12 +79,91 @@ pub(super) async fn load_signal_and_get_timeline(
     screen_width: u32,
     block_height: u32,
 ) -> shared::Timeline {
-    // @TODO implement, copy from tauri platform
-    shared::Timeline { blocks: Vec::new() }
+    let mut waveform_lock = STORE.waveform.lock().unwrap();
+    let waveform = waveform_lock.as_mut().unwrap();
+    waveform.load_signals_multi_threaded(&[signal_ref]);
+    let signal = waveform.get_signal(signal_ref).unwrap();
+    let time_table = waveform.time_table();
+    let timeline = signal_to_timeline(signal, time_table, screen_width, block_height);
+    timeline
 }
 
 pub(super) async fn unload_signal(signal_ref: wellen::SignalRef) {
     let mut waveform_lock = STORE.waveform.lock().unwrap_throw();
     let waveform = waveform_lock.as_mut().unwrap_throw();
     waveform.unload_signals(&[signal_ref]);
+}
+
+// @TODO keep in sync with the same method in `src-tauri/src/lib.rs`
+fn signal_to_timeline(
+    signal: &wellen::Signal,
+    time_table: &[wellen::Time],
+    screen_width: u32,
+    block_height: u32,
+) -> shared::Timeline {
+    const MIN_BLOCK_WIDTH: u32 = 3;
+    const LETTER_WIDTH: u32 = 15;
+    const LETTER_HEIGHT: u32 = 21;
+    const LABEL_X_PADDING: u32 = 10;
+
+    let Some(last_time) = time_table.last().copied() else {
+        return shared::Timeline::default();
+    };
+
+    let last_time = last_time as f64;
+    let screen_width = screen_width as f64;
+
+    let mut x_value_pairs = signal
+        .iter_changes()
+        .map(|(index, value)| {
+            let index = index as usize;
+            let time = time_table[index] as f64;
+            let x = time / last_time * screen_width;
+            (x, value)
+        })
+        .peekable();
+
+    // @TODO parallelize?
+    let mut blocks = Vec::new();
+    while let Some((block_x, value)) = x_value_pairs.next() {
+        let next_block_x = if let Some((next_block_x, _)) = x_value_pairs.peek() {
+            *next_block_x
+        } else {
+            screen_width
+        };
+
+        let block_width = (next_block_x - block_x) as u32;
+        if block_width < MIN_BLOCK_WIDTH {
+            continue;
+        }
+
+        // @TODO dynamic formatter
+        // @TODO optimize it by not using `.to_string` if possible
+        let value = value.to_string();
+        let ones_and_zeros = value.chars().rev().map(|char| char.to_digit(2).unwrap()).collect::<Vec<_>>();
+        let mut base = convert_base::Convert::new(2, 16);
+        let output = base.convert::<u32, u32>(&ones_and_zeros);
+        let value: String = output.into_iter().map(|number| char::from_digit(number, 16).unwrap()).collect();
+
+        let value_width = value.chars().count() as u32 * LETTER_WIDTH;
+        let label = if (value_width + (2 * LABEL_X_PADDING)) <= block_width {
+            Some(shared::TimeLineBlockLabel {
+                text: value,
+                x: (block_width - value_width) / 2,
+                y: (block_height - LETTER_HEIGHT) / 2,
+            })
+        } else {
+            None
+        };
+
+        let block = shared::TimelineBlock {
+            x: block_x as u32,
+            width: block_width,
+            height: block_height,
+            label,
+        };
+        blocks.push(block);
+    }
+
+    shared::Timeline { blocks }
 }

@@ -38,6 +38,15 @@ run_task = { fork = true, parallel = true, name = [
     "watch_tauri_glue",
 ]}
 
+[tasks.start_browser_release]
+description = "Run without Tauri in the browser & watch Typescript and Rust in the release mode"
+dependencies = ["store_current_process_id"]
+run_task = { fork = true, parallel = true, name = [
+    "mzoon_start_release_with_cleanup", 
+    "watch_pixi_canvas",
+    "watch_tauri_glue",
+]}
+
 [tasks.bundle]
 description = "Compile in the release mode and create installation packages"
 dependencies = ["tauri_build", "show_release_paths"]
@@ -100,6 +109,11 @@ description = "Run `mzoon start`"
 extend = "mzoon"
 args = ["start"]
 
+[tasks.mzoon_start_release]
+description = "Run `mzoon start --release`"
+extend = "mzoon"
+args = ["start", "--release"]
+
 [tasks.tauri_dev_with_cleanup]
 description = "Run forked `tauri dev` with cleanup"
 run_task = { fork = true, cleanup_task = "kill_watchers", name = ["tauri_dev"] }
@@ -107,6 +121,10 @@ run_task = { fork = true, cleanup_task = "kill_watchers", name = ["tauri_dev"] }
 [tasks.mzoon_start_with_cleanup]
 description = "Run forked `mzoon start` with cleanup"
 run_task = { fork = true, cleanup_task = "kill_watchers", name = ["mzoon_start"] }
+
+[tasks.mzoon_start_release_with_cleanup]
+description = "Run forked `mzoon start` with cleanup"
+run_task = { fork = true, cleanup_task = "kill_watchers", name = ["mzoon_start_release"] }
 
 [tasks.kill_watchers]
 description = "Kill the cargo-make/makers process and all its children / forked processes"

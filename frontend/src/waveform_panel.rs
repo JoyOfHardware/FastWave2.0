@@ -62,6 +62,7 @@ impl WaveformPanel {
                 selected_var_refs.signal_vec().delay_remove(clone!((hierarchy) move |var_ref| {
                     clone!((var_ref, hierarchy) async move {
                         if let Some(hierarchy) = hierarchy.get_cloned() {
+                            // @TODO unload only when no other selected variable use it?
                             platform::unload_signal(hierarchy.get(var_ref).signal_ref()).await;
                         }
                     })

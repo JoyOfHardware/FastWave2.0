@@ -219,10 +219,7 @@ impl ControlsPanel {
                                 Task::start(async move {
                                     if let Some(filename) = platform::pick_and_load_waveform(Some(file)).await {
                                         loaded_filename.set_neq(Some(filename));
-                                        let (hierarchy, time_table) =
-                                            join!(platform::get_hierarchy(), platform::get_time_table());
-                                        hierarchy
-                                            .set(Some((Rc::new(hierarchy), Rc::new(time_table))))
+                                        hierarchy.set(Some(Rc::new(platform::get_hierarchy().await)))
                                     }
                                 })
                         })

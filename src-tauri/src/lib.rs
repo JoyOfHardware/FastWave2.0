@@ -88,6 +88,7 @@ pub fn run() {
         .expect("error while running tauri application");
 }
 
+// @TODO keep in sync with the same method in `frontend/src/platform/browser.rs`
 fn signal_to_timeline(
     signal: &wellen::Signal,
     time_table: &[wellen::Time],
