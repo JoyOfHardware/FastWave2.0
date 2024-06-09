@@ -54,7 +54,8 @@ async fn load_signal_and_get_timeline(
     waveform.load_signals_multi_threaded(&[signal_ref]);
     let signal = waveform.get_signal(signal_ref).unwrap();
     let time_table = waveform.time_table();
-    let timeline = signal_to_timeline(signal, time_table, screen_width, block_height, var_format);
+    let timeline =
+        shared::signal_to_timeline(signal, time_table, screen_width, block_height, var_format);
     Ok(serde_json::to_value(timeline).unwrap())
 }
 
@@ -87,76 +88,4 @@ pub fn run() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
-}
-
-// @TODO keep in sync with the same method in `frontend/src/platform/browser.rs`
-fn signal_to_timeline(
-    signal: &wellen::Signal,
-    time_table: &[wellen::Time],
-    screen_width: u32,
-    block_height: u32,
-    var_format: shared::VarFormat,
-) -> shared::Timeline {
-    const MIN_BLOCK_WIDTH: u32 = 3;
-    // Courier New, 16px, sync with `label_style` in `pixi_canvas.rs`
-    const LETTER_WIDTH: f64 = 9.61;
-    const LETTER_HEIGHT: u32 = 18;
-    const LABEL_X_PADDING: u32 = 10;
-
-    let Some(last_time) = time_table.last().copied() else {
-        return shared::Timeline::default();
-    };
-
-    let last_time = last_time as f64;
-    let screen_width = screen_width as f64;
-
-    let mut x_value_pairs = signal
-        .iter_changes()
-        .map(|(index, value)| {
-            let index = index as usize;
-            let time = time_table[index] as f64;
-            let x = time / last_time * screen_width;
-            (x, value)
-        })
-        .peekable();
-
-    // @TODO parallelize?
-    let mut blocks = Vec::new();
-    while let Some((block_x, value)) = x_value_pairs.next() {
-        let next_block_x = if let Some((next_block_x, _)) = x_value_pairs.peek() {
-            *next_block_x
-        } else {
-            screen_width
-        };
-
-        let block_width = (next_block_x - block_x) as u32;
-        if block_width < MIN_BLOCK_WIDTH {
-            continue;
-        }
-
-        // @TODO cache?
-        let value = var_format.format(value);
-
-        let value_width = (value.chars().count() as f64 * LETTER_WIDTH) as u32;
-        // @TODO Ellipsis instead of hiding?
-        let label = if (value_width + (2 * LABEL_X_PADDING)) <= block_width {
-            Some(shared::TimeLineBlockLabel {
-                text: value,
-                x: (block_width - value_width) / 2,
-                y: (block_height - LETTER_HEIGHT) / 2,
-            })
-        } else {
-            None
-        };
-
-        let block = shared::TimelineBlock {
-            x: block_x as u32,
-            width: block_width,
-            height: block_height,
-            label,
-        };
-        blocks.push(block);
-    }
-
-    shared::Timeline { blocks }
 }

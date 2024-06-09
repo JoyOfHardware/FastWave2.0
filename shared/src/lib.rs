@@ -3,6 +3,9 @@ use moonlight::*;
 mod var_format;
 pub use var_format::VarFormat;
 
+mod signal_to_timeline;
+pub use signal_to_timeline::signal_to_timeline;
+
 pub mod wellen_helpers;
 
 #[derive(Serialize, Deserialize, Debug, Default)]
