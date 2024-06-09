@@ -125,7 +125,7 @@ class VarSignalRow {
         align: "center",
         fill: "White",
         fontSize: 16,
-        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"',
+        fontFamily: '"Courier New", monospace',
     });    
 
     constructor(

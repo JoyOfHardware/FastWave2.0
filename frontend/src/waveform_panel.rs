@@ -155,13 +155,14 @@ impl WaveformPanel {
         let (hovered, hovered_signal) = Mutable::new_and_signal(false);
         Button::new()
             .s(Height::exact(ROW_HEIGHT))
+            .s(Width::growable())
             .s(Background::new().color_signal(
                 hovered_signal.map_bool(|| color!("SlateBlue"), || color!("SlateBlue", 0.8)),
             ))
             .s(RoundedCorners::new().left(15).right(5))
             .label(
                 El::new()
-                    .s(Align::center())
+                    .s(Align::new().left())
                     .s(Padding::new().left(20).right(17).y(10))
                     .child(name),
             )
