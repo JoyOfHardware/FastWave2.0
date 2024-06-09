@@ -78,13 +78,14 @@ pub(super) async fn load_signal_and_get_timeline(
     signal_ref: wellen::SignalRef,
     screen_width: u32,
     block_height: u32,
+    var_format: shared::VarFormat,
 ) -> shared::Timeline {
     let mut waveform_lock = STORE.waveform.lock().unwrap();
     let waveform = waveform_lock.as_mut().unwrap();
     waveform.load_signals_multi_threaded(&[signal_ref]);
     let signal = waveform.get_signal(signal_ref).unwrap();
     let time_table = waveform.time_table();
-    let timeline = signal_to_timeline(signal, time_table, screen_width, block_height);
+    let timeline = signal_to_timeline(signal, time_table, screen_width, block_height, var_format);
     timeline
 }
 
@@ -100,11 +101,12 @@ fn signal_to_timeline(
     time_table: &[wellen::Time],
     screen_width: u32,
     block_height: u32,
+    var_format: shared::VarFormat,
 ) -> shared::Timeline {
     const MIN_BLOCK_WIDTH: u32 = 3;
     // Courier New, 16px, sync with `label_style` in `pixi_canvas.rs`
     const LETTER_WIDTH: f64 = 9.61;
-    const LETTER_HEIGHT: u32 = 21;
+    const LETTER_HEIGHT: u32 = 18;
     const LABEL_X_PADDING: u32 = 10;
 
     let Some(last_time) = time_table.last().copied() else {
@@ -139,7 +141,7 @@ fn signal_to_timeline(
         }
 
         // @TODO cache?
-        let value = shared::VarFormat::default().format(value);
+        let value = var_format.format(value);
 
         let value_width = (value.chars().count() as f64 * LETTER_WIDTH) as u32;
         // @TODO Ellipsis instead of hiding?

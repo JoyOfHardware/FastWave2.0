@@ -21,11 +21,18 @@ pub(super) async fn load_signal_and_get_timeline(
     signal_ref: wellen::SignalRef,
     screen_width: u32,
     block_height: u32,
+    var_format: shared::VarFormat,
 ) -> shared::Timeline {
+    let var_format = serde_wasm_bindgen::to_value(&var_format).unwrap_throw();
     serde_wasm_bindgen::from_value(
-        tauri_glue::load_signal_and_get_timeline(signal_ref.index(), screen_width, block_height)
-            .await
-            .unwrap_throw(),
+        tauri_glue::load_signal_and_get_timeline(
+            signal_ref.index(),
+            screen_width,
+            block_height,
+            var_format,
+        )
+        .await
+        .unwrap_throw(),
     )
     .unwrap_throw()
 }
@@ -56,6 +63,7 @@ mod tauri_glue {
             signal_ref_index: usize,
             screen_width: u32,
             block_height: u32,
+            var_format: JsValue,
         ) -> Result<JsValue, JsValue>;
 
         #[wasm_bindgen(catch)]

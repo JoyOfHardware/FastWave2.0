@@ -33,8 +33,9 @@ pub async fn load_signal_and_get_timeline(
     signal_ref: wellen::SignalRef,
     screen_width: u32,
     block_height: u32,
+    var_format: shared::VarFormat,
 ) -> shared::Timeline {
-    platform::load_signal_and_get_timeline(signal_ref, screen_width, block_height).await
+    platform::load_signal_and_get_timeline(signal_ref, screen_width, block_height, var_format).await
 }
 
 pub async fn unload_signal(signal_ref: wellen::SignalRef) {

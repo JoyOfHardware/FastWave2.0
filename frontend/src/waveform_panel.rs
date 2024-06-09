@@ -13,6 +13,7 @@ const ROW_GAP: u32 = 4;
 pub struct WaveformPanel {
     selected_var_refs: MutableVec<wellen::VarRef>,
     hierarchy: Mutable<Option<Rc<wellen::Hierarchy>>>,
+    canvas_controller: Mutable<ReadOnlyMutable<Option<PixiController>>>,
 }
 
 impl WaveformPanel {
@@ -23,6 +24,7 @@ impl WaveformPanel {
         Self {
             selected_var_refs,
             hierarchy,
+            canvas_controller: Mutable::new(Mutable::default().read_only()),
         }
         .root()
     }
@@ -54,11 +56,13 @@ impl WaveformPanel {
     fn canvas(&self, selected_vars_panel_height: ReadOnlyMutable<u32>) -> impl Element {
         let selected_var_refs = self.selected_var_refs.clone();
         let hierarchy = self.hierarchy.clone();
+        let canvas_controller = self.canvas_controller.clone();
         PixiCanvas::new(ROW_HEIGHT, ROW_GAP)
             .s(Align::new().top())
             .s(Width::fill())
             .s(Height::exact_signal(selected_vars_panel_height.signal()))
             .task_with_controller(move |controller| {
+                canvas_controller.set(controller.clone());
                 selected_var_refs.signal_vec().delay_remove(clone!((hierarchy) move |var_ref| {
                     clone!((var_ref, hierarchy) async move {
                         if let Some(hierarchy) = hierarchy.get_cloned() {
@@ -112,12 +116,15 @@ impl WaveformPanel {
     ) {
         let hierarchy = hierarchy.get_cloned().unwrap();
 
+        let var_format = shared::VarFormat::default();
+
         let var = hierarchy.get(var_ref);
         let signal_ref = var.signal_ref();
         let timeline = platform::load_signal_and_get_timeline(
             signal_ref,
             controller.screen_width(),
             ROW_HEIGHT,
+            var_format,
         )
         .await;
 
@@ -128,7 +135,8 @@ impl WaveformPanel {
         // Note: Sync `timeline`'s type with the `Timeline` in `frontend/typescript/pixi_canvas/pixi_canvas.ts'
         let timeline = serde_wasm_bindgen::to_value(&timeline).unwrap_throw();
         let signal_ref_index = signal_ref.index();
-        controller.push_var(signal_ref_index, timeline);
+        let var_format = serde_wasm_bindgen::to_value(&var_format).unwrap_throw();
+        controller.push_var(signal_ref_index, timeline, var_format);
     }
 
     fn selected_var_panel(
@@ -141,8 +149,8 @@ impl WaveformPanel {
         };
         let var = hierarchy.get(var_ref);
         Row::new()
-            .item(self.selected_var_name_button(var.name(&hierarchy), index))
-            .item(self.selected_var_format_button())
+            .item(self.selected_var_name_button(var.name(&hierarchy), index.clone()))
+            .item(self.selected_var_format_button(index))
             .apply(Some)
     }
 
@@ -174,9 +182,10 @@ impl WaveformPanel {
             })
     }
 
-    fn selected_var_format_button(&self) -> impl Element {
+    fn selected_var_format_button(&self, index: ReadOnlyMutable<Option<usize>>) -> impl Element {
         let var_format = Mutable::new(shared::VarFormat::default());
         let (hovered, hovered_signal) = Mutable::new_and_signal(false);
+        let canvas_controller = self.canvas_controller.clone();
         Button::new()
             .s(Height::exact(ROW_HEIGHT))
             .s(Width::exact(70))
@@ -191,6 +200,18 @@ impl WaveformPanel {
                     .child_signal(var_format.signal().map(|format| format.as_static_str())),
             )
             .on_hovered_change(move |is_hovered| hovered.set_neq(is_hovered))
-            .on_press(move || var_format.update(|format| format.next()))
+            .on_press(move || {
+                let next_format = var_format.get().next();
+                var_format.set(next_format);
+                if let Some(canvas_controller) = canvas_controller.get_cloned().lock_ref().as_ref()
+                {
+                    if let Some(index) = index.get() {
+                        canvas_controller.set_var_format(
+                            index,
+                            serde_wasm_bindgen::to_value(&next_format).unwrap_throw(),
+                        );
+                    }
+                }
+            })
     }
 }

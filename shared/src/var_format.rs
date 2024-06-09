@@ -1,4 +1,7 @@
-#[derive(Default, Clone, Copy, Debug)]
+use moonlight::*;
+
+#[derive(Default, Clone, Copy, Debug, Serialize, Deserialize)]
+#[serde(crate = "serde")]
 pub enum VarFormat {
     ASCII,
     Binary,
@@ -55,12 +58,14 @@ impl VarFormat {
             }
             VarFormat::Binary => value,
             VarFormat::BinaryWithGroups => {
+                let char_count = value.len();
                 value
                     .chars()
                     .enumerate()
                     .fold(String::new(), |mut value, (index, one_or_zero)| {
                         value.push(one_or_zero);
-                        if (index + 1) % 4 == 0 {
+                        let is_last = index == char_count - 1;
+                        if !is_last && (index + 1) % 4 == 0 {
                             value.push(' ');
                         }
                         value
