@@ -16,7 +16,18 @@ type TimeLineBlockLabel = {
     y: number,
 }
 
-type TimelineGetter = (signal_ref_index: number, screen_width: number, row_height: number) => Promise<Timeline>;
+// @TODO sync with Rust
+enum VarFormat {
+    ASCII,
+    Binary,
+    BinaryWithGroups,
+    Hexadecimal,
+    Octal,
+    Signed,
+    Unsigned,
+}
+
+type TimelineGetter = (signal_ref_index: number, screen_width: number, row_height: number, var_format: VarFormat) => Promise<Timeline>;
 
 export class PixiController {
     app: Application
@@ -26,7 +37,7 @@ export class PixiController {
     row_height: number;
     row_gap: number;
     previous_parent_width: number | null;
-    timeline_getter: TimelineGetter
+    timeline_getter: TimelineGetter;
 
     constructor(row_height: number, row_gap: number, timeline_getter: TimelineGetter) {
         this.app = new Application();
@@ -51,7 +62,7 @@ export class PixiController {
         const width_changed = width !== this.previous_parent_width;
         this.previous_parent_width = width;
         if (width_changed) {
-            await this.redraw_rows();
+            await this.redraw_all_rows();
         }
     }
 
@@ -74,11 +85,27 @@ export class PixiController {
 
     // -- FastWave-specific --
 
-    async redraw_rows() {
+    async redraw_all_rows() {
         await Promise.all(this.var_signal_rows.map(async row => { 
-            const timeline = await this.timeline_getter(row.signal_ref_index, this.app.screen.width, this.row_height);
+            const timeline = await this.timeline_getter(row.signal_ref_index, this.app.screen.width, this.row_height, row.var_format);
             row.redraw(timeline);
         }))
+    }
+
+    async redraw_row(index: number) {
+        const row = this.var_signal_rows[index];
+        if (typeof row !== 'undefined') {
+            const timeline = await this.timeline_getter(row.signal_ref_index, this.app.screen.width, this.row_height, row.var_format);
+            row.redraw(timeline);
+        }
+    }
+
+    async set_var_format(index: number, var_format: VarFormat) {
+        const row = this.var_signal_rows[index];
+        if (typeof row !== 'undefined') {
+            row.set_var_format(var_format);
+            this.redraw_row(index);
+        }
     }
 
     remove_var(index: number) {
@@ -87,9 +114,10 @@ export class PixiController {
         }
     }
 
-    push_var(signal_ref_index: number, timeline: Timeline) {
+    push_var(signal_ref_index: number, timeline: Timeline, var_format: VarFormat) {
         new VarSignalRow(
             signal_ref_index,
+            var_format,
             timeline,
             this.app,
             this.var_signal_rows,
@@ -110,6 +138,7 @@ export class PixiController {
 
 class VarSignalRow {
     signal_ref_index: number;
+    var_format: VarFormat;
     timeline: Timeline;
     app: Application;
     owner: Array<VarSignalRow>;
@@ -130,6 +159,7 @@ class VarSignalRow {
 
     constructor(
         signal_ref_index: number,
+        var_format: VarFormat,
         timeline: Timeline,
         app: Application,
         owner: Array<VarSignalRow>, 
@@ -138,6 +168,7 @@ class VarSignalRow {
         row_gap: number,
     ) {
         this.signal_ref_index = signal_ref_index;
+        this.var_format = var_format;
         this.timeline = timeline;
         this.app = app;
 
@@ -166,6 +197,10 @@ class VarSignalRow {
         this.row_container.addChild(this.signal_blocks_container);
 
         this.draw();
+    }
+
+    set_var_format(var_format: VarFormat) {
+        this.var_format = var_format;
     }
 
     redraw(timeline: Timeline) {

@@ -35156,7 +35156,7 @@ var PixiController = class {
     const width_changed = width !== this.previous_parent_width;
     this.previous_parent_width = width;
     if (width_changed) {
-      await this.redraw_rows();
+      await this.redraw_all_rows();
     }
   }
   destroy() {
@@ -35175,20 +35175,35 @@ var PixiController = class {
     return this.app.screen.width;
   }
   // -- FastWave-specific --
-  async redraw_rows() {
+  async redraw_all_rows() {
     await Promise.all(this.var_signal_rows.map(async (row) => {
-      const timeline = await this.timeline_getter(row.signal_ref_index, this.app.screen.width, this.row_height);
+      const timeline = await this.timeline_getter(row.signal_ref_index, this.app.screen.width, this.row_height, row.var_format);
       row.redraw(timeline);
     }));
+  }
+  async redraw_row(index) {
+    const row = this.var_signal_rows[index];
+    if (typeof row !== "undefined") {
+      const timeline = await this.timeline_getter(row.signal_ref_index, this.app.screen.width, this.row_height, row.var_format);
+      row.redraw(timeline);
+    }
+  }
+  async set_var_format(index, var_format) {
+    const row = this.var_signal_rows[index];
+    if (typeof row !== "undefined") {
+      row.set_var_format(var_format);
+      this.redraw_row(index);
+    }
   }
   remove_var(index) {
     if (typeof this.var_signal_rows[index] !== "undefined") {
       this.var_signal_rows[index].destroy();
     }
   }
-  push_var(signal_ref_index, timeline) {
+  push_var(signal_ref_index, timeline, var_format) {
     new VarSignalRow(
       signal_ref_index,
+      var_format,
       timeline,
       this.app,
       this.var_signal_rows,
@@ -35206,6 +35221,7 @@ var PixiController = class {
 };
 var VarSignalRow = class {
   signal_ref_index;
+  var_format;
   timeline;
   app;
   owner;
@@ -35223,8 +35239,9 @@ var VarSignalRow = class {
     fontSize: 16,
     fontFamily: '"Courier New", monospace'
   });
-  constructor(signal_ref_index, timeline, app, owner, rows_container, row_height, row_gap) {
+  constructor(signal_ref_index, var_format, timeline, app, owner, rows_container, row_height, row_gap) {
     this.signal_ref_index = signal_ref_index;
+    this.var_format = var_format;
     this.timeline = timeline;
     this.app = app;
     this.row_height = row_height;
@@ -35243,6 +35260,9 @@ var VarSignalRow = class {
     this.row_container.addChild(this.row_container_background);
     this.row_container.addChild(this.signal_blocks_container);
     this.draw();
+  }
+  set_var_format(var_format) {
+    this.var_format = var_format;
   }
   redraw(timeline) {
     this.timeline = timeline;

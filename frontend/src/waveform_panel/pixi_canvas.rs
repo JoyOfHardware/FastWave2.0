@@ -52,13 +52,14 @@ impl PixiCanvas {
         let task_with_controller = Mutable::new(None);
         // -- FastWave-specific --
         let timeline_getter = Rc::new(Closure::new(
-            |signal_ref_index, screen_width, row_height| {
+            |signal_ref_index, screen_width, row_height, var_format| {
                 future_to_promise(async move {
                     let signal_ref = wellen::SignalRef::from_index(signal_ref_index).unwrap_throw();
                     let timeline = platform::load_signal_and_get_timeline(
                         signal_ref,
                         screen_width,
                         row_height,
+                        serde_wasm_bindgen::from_value(var_format).unwrap_throw(),
                     )
                     .await;
                     let timeline = serde_wasm_bindgen::to_value(&timeline).unwrap_throw();
@@ -114,8 +115,9 @@ mod js_bridge {
     type SignalRefIndex = usize;
     type ScreenWidth = u32;
     type RowHeight = u32;
+    type VarFormatJs = JsValue;
     type TimelineGetter =
-        Closure<dyn FnMut(SignalRefIndex, ScreenWidth, RowHeight) -> TimelinePromise>;
+        Closure<dyn FnMut(SignalRefIndex, ScreenWidth, RowHeight, VarFormatJs) -> TimelinePromise>;
 
     // Note: Add all corresponding methods to `frontend/typescript/pixi_canvas/pixi_canvas.ts`
     #[wasm_bindgen(module = "/typescript/bundles/pixi_canvas.js")]
@@ -146,10 +148,18 @@ mod js_bridge {
         // -- FastWave-specific --
 
         #[wasm_bindgen(method)]
+        pub fn set_var_format(this: &PixiController, index: usize, var_format: JsValue);
+
+        #[wasm_bindgen(method)]
         pub fn remove_var(this: &PixiController, index: usize);
 
         #[wasm_bindgen(method)]
-        pub fn push_var(this: &PixiController, signal_ref_index: usize, timeline: JsValue);
+        pub fn push_var(
+            this: &PixiController,
+            signal_ref_index: usize,
+            timeline: JsValue,
+            var_format: JsValue,
+        );
 
         #[wasm_bindgen(method)]
         pub fn pop_var(this: &PixiController);
