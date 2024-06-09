@@ -3,10 +3,9 @@ pub enum VarFormat {
     ASCII,
     Binary,
     BinaryWithGroups,
-    // #[default]
+    #[default]
     Hexadecimal,
     Octal,
-    #[default]
     Signed,
     Unsigned,
 }
@@ -44,16 +43,29 @@ impl VarFormat {
         }
         match self {
             VarFormat::ASCII => {
-                // @TODO
-                value
-            },
-            VarFormat::Binary => {
-                value
-            },
+                let mut formatted_value = String::new();
+                for group_index in 0..value.len() / 8 {
+                    let offset = group_index * 8;
+                    let group = &value[offset..offset + 8];
+                    if let Ok(byte_char) = u8::from_str_radix(group, 2) {
+                        formatted_value.push(byte_char as char);
+                    }
+                }
+                formatted_value
+            }
+            VarFormat::Binary => value,
             VarFormat::BinaryWithGroups => {
-                // @TODO
                 value
-            },
+                    .chars()
+                    .enumerate()
+                    .fold(String::new(), |mut value, (index, one_or_zero)| {
+                        value.push(one_or_zero);
+                        if (index + 1) % 4 == 0 {
+                            value.push(' ');
+                        }
+                        value
+                    })
+            }
             VarFormat::Hexadecimal => {
                 let ones_and_zeros = value
                     .chars()
@@ -68,7 +80,7 @@ impl VarFormat {
                     .map(|number| char::from_digit(number, 16).unwrap())
                     .collect();
                 value
-            },
+            }
             VarFormat::Octal => {
                 let ones_and_zeros = value
                     .chars()
@@ -83,7 +95,7 @@ impl VarFormat {
                     .map(|number| char::from_digit(number, 8).unwrap())
                     .collect();
                 value
-            },
+            }
             VarFormat::Signed => {
                 let mut ones_and_zeros = value
                     .chars()
@@ -92,16 +104,16 @@ impl VarFormat {
                     .collect::<Vec<_>>();
 
                 // https://builtin.com/articles/twos-complement
-                let sign = if ones_and_zeros.last().unwrap() == &0 { "" } else { "-" };
+                let sign = if ones_and_zeros.last().unwrap() == &0 {
+                    ""
+                } else {
+                    "-"
+                };
                 if sign == "-" {
                     let mut one_found = false;
                     for one_or_zero in &mut ones_and_zeros {
                         if one_found {
-                            *one_or_zero = if one_or_zero == &0 {
-                                1
-                            } else {
-                                0
-                            }
+                            *one_or_zero = if one_or_zero == &0 { 1 } else { 0 }
                         } else if one_or_zero == &1 {
                             one_found = true;
                         }
@@ -118,7 +130,7 @@ impl VarFormat {
                 // @TODO chain `sign` before collecting?
                 let value = sign.to_owned() + &value_without_sign;
                 value
-            },
+            }
             VarFormat::Unsigned => {
                 let ones_and_zeros = value
                     .chars()
@@ -133,7 +145,7 @@ impl VarFormat {
                     .map(|number| char::from_digit(number, 10).unwrap())
                     .collect();
                 value
-            },
+            }
         }
     }
 }

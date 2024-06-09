@@ -96,7 +96,8 @@ fn signal_to_timeline(
     block_height: u32,
 ) -> shared::Timeline {
     const MIN_BLOCK_WIDTH: u32 = 3;
-    const LETTER_WIDTH: u32 = 15;
+    // Courier New, 16px, sync with `label_style` in `pixi_canvas.rs`
+    const LETTER_WIDTH: f64 = 9.61;
     const LETTER_HEIGHT: u32 = 21;
     const LABEL_X_PADDING: u32 = 10;
 
@@ -131,9 +132,11 @@ fn signal_to_timeline(
             continue;
         }
 
+        // @TODO cache?
         let value = shared::VarFormat::default().format(value);
 
-        let value_width = value.chars().count() as u32 * LETTER_WIDTH;
+        let value_width = (value.chars().count() as f64 * LETTER_WIDTH) as u32;
+        // @TODO Ellipsis instead of hiding?
         let label = if (value_width + (2 * LABEL_X_PADDING)) <= block_width {
             Some(shared::TimeLineBlockLabel {
                 text: value,

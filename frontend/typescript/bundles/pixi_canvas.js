@@ -35221,7 +35221,7 @@ var VarSignalRow = class {
     align: "center",
     fill: "White",
     fontSize: 16,
-    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"'
+    fontFamily: '"Courier New", monospace'
   });
   constructor(signal_ref_index, timeline, app, owner, rows_container, row_height, row_gap) {
     this.signal_ref_index = signal_ref_index;
