@@ -31,15 +31,15 @@ pub async fn get_hierarchy() -> wellen::Hierarchy {
 
 pub async fn load_signal_and_get_timeline(
     signal_ref: wellen::SignalRef,
-    timeline_width: u32,
+    timeline_zoom: f64,
     timeline_viewport_width: u32,
-    timeline_viewport_x: u32,
+    timeline_viewport_x: i32,
     block_height: u32,
     var_format: shared::VarFormat,
 ) -> shared::Timeline {
     platform::load_signal_and_get_timeline(
         signal_ref, 
-        timeline_width,
+        timeline_zoom,
         timeline_viewport_width,
         timeline_viewport_x, 
         block_height, 
