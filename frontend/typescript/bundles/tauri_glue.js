@@ -2520,8 +2520,15 @@ async function pick_and_load_waveform() {
 async function get_hierarchy() {
   return await invoke2("get_hierarchy");
 }
-async function load_signal_and_get_timeline(signal_ref_index, screen_width, block_height, var_format) {
-  return await invoke2("load_signal_and_get_timeline", { signal_ref_index, screen_width, block_height, var_format });
+async function load_signal_and_get_timeline(signal_ref_index, timeline_width, timeline_viewport_width, timeline_viewport_x, block_height, var_format) {
+  return await invoke2("load_signal_and_get_timeline", {
+    signal_ref_index,
+    timeline_width,
+    timeline_viewport_width,
+    timeline_viewport_x,
+    block_height,
+    var_format
+  });
 }
 async function unload_signal(signal_ref_index) {
   return await invoke2("unload_signal", { signal_ref_index });

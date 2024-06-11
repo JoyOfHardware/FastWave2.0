@@ -35133,12 +35133,18 @@ var PixiController = class {
   // -- FastWave-specific --
   var_signal_rows = [];
   var_signal_rows_container = new Container();
+  timeline_width;
+  timeline_viewport_width;
+  timeline_viewport_x;
   row_height;
   row_gap;
   previous_parent_width;
   timeline_getter;
-  constructor(row_height, row_gap, timeline_getter) {
+  constructor(timeline_width, timeline_viewport_width, timeline_viewport_x, row_height, row_gap, timeline_getter) {
     this.app = new Application();
+    this.timeline_width = timeline_width;
+    this.timeline_viewport_width = timeline_viewport_width;
+    this.timeline_viewport_x = timeline_viewport_x;
     this.row_height = row_height;
     this.row_gap = row_gap;
     this.app.stage.addChild(this.var_signal_rows_container);
@@ -35156,6 +35162,7 @@ var PixiController = class {
     const width_changed = width !== this.previous_parent_width;
     this.previous_parent_width = width;
     if (width_changed) {
+      this.timeline_viewport_width = width;
       await this.redraw_all_rows();
     }
   }
@@ -35171,20 +35178,40 @@ var PixiController = class {
     };
     this.app.destroy(rendererDestroyOptions, options);
   }
-  screen_width() {
-    return this.app.screen.width;
+  get_timeline_width() {
+    return this.timeline_width;
+  }
+  get_timeline_viewport_width() {
+    return this.timeline_viewport_width;
+  }
+  get_timeline_viewport_x() {
+    return this.timeline_viewport_x;
   }
   // -- FastWave-specific --
   async redraw_all_rows() {
     await Promise.all(this.var_signal_rows.map(async (row) => {
-      const timeline = await this.timeline_getter(row.signal_ref_index, this.app.screen.width, this.row_height, row.var_format);
+      const timeline = await this.timeline_getter(
+        row.signal_ref_index,
+        this.timeline_width,
+        this.timeline_viewport_width,
+        this.timeline_viewport_x,
+        this.row_height,
+        row.var_format
+      );
       row.redraw(timeline);
     }));
   }
   async redraw_row(index) {
     const row = this.var_signal_rows[index];
     if (typeof row !== "undefined") {
-      const timeline = await this.timeline_getter(row.signal_ref_index, this.app.screen.width, this.row_height, row.var_format);
+      const timeline = await this.timeline_getter(
+        row.signal_ref_index,
+        this.timeline_width,
+        this.timeline_viewport_width,
+        this.timeline_viewport_x,
+        this.row_height,
+        row.var_format
+      );
       row.redraw(timeline);
     }
   }

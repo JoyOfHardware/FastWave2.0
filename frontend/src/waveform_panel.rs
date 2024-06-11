@@ -122,7 +122,9 @@ impl WaveformPanel {
         let signal_ref = var.signal_ref();
         let timeline = platform::load_signal_and_get_timeline(
             signal_ref,
-            controller.screen_width(),
+            controller.get_timeline_width(),
+            controller.get_timeline_viewport_width(),
+            controller.get_timeline_viewport_x(),
             ROW_HEIGHT,
             var_format,
         )

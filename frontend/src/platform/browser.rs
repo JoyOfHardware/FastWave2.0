@@ -76,7 +76,9 @@ pub(super) async fn get_hierarchy() -> wellen::Hierarchy {
 
 pub(super) async fn load_signal_and_get_timeline(
     signal_ref: wellen::SignalRef,
-    screen_width: u32,
+    timeline_width: u32,
+    timeline_viewport_width: u32,
+    timeline_viewport_x: u32,
     block_height: u32,
     var_format: shared::VarFormat,
 ) -> shared::Timeline {
@@ -86,7 +88,15 @@ pub(super) async fn load_signal_and_get_timeline(
     let signal = waveform.get_signal(signal_ref).unwrap();
     let time_table = waveform.time_table();
     let timeline =
-        shared::signal_to_timeline(signal, time_table, screen_width, block_height, var_format);
+        shared::signal_to_timeline(
+            signal, 
+            time_table, 
+            timeline_width, 
+            timeline_viewport_width, 
+            timeline_viewport_x,
+            block_height,
+            var_format,
+        );
     timeline
 }
 

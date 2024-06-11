@@ -42,7 +42,9 @@ async fn get_hierarchy(store: tauri::State<'_, Store>) -> Result<serde_json::Val
 #[tauri::command(rename_all = "snake_case")]
 async fn load_signal_and_get_timeline(
     signal_ref_index: usize,
-    screen_width: u32,
+    timeline_width: u32,
+    timeline_viewport_width: u32,
+    timeline_viewport_x: u32,
     block_height: u32,
     var_format: shared::VarFormat,
     store: tauri::State<'_, Store>,
@@ -55,7 +57,15 @@ async fn load_signal_and_get_timeline(
     let signal = waveform.get_signal(signal_ref).unwrap();
     let time_table = waveform.time_table();
     let timeline =
-        shared::signal_to_timeline(signal, time_table, screen_width, block_height, var_format);
+        shared::signal_to_timeline(
+            signal, 
+            time_table, 
+            timeline_width, 
+            timeline_viewport_width, 
+            timeline_viewport_x,
+            block_height,
+            var_format,
+        );
     Ok(serde_json::to_value(timeline).unwrap())
 }
 
