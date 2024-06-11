@@ -35133,22 +35133,21 @@ var PixiController = class {
   // -- FastWave-specific --
   var_signal_rows = [];
   var_signal_rows_container = new Container();
-  timeline_width;
+  // @TODO reset `timeline_*` on file unload?
+  timeline_zoom;
   timeline_viewport_width;
   timeline_viewport_x;
   row_height;
   row_gap;
-  previous_parent_width;
   timeline_getter;
-  constructor(timeline_width, timeline_viewport_width, timeline_viewport_x, row_height, row_gap, timeline_getter) {
+  constructor(timeline_zoom, timeline_viewport_width, timeline_viewport_x, row_height, row_gap, timeline_getter) {
     this.app = new Application();
-    this.timeline_width = timeline_width;
+    this.timeline_zoom = timeline_zoom;
     this.timeline_viewport_width = timeline_viewport_width;
     this.timeline_viewport_x = timeline_viewport_x;
     this.row_height = row_height;
     this.row_gap = row_gap;
     this.app.stage.addChild(this.var_signal_rows_container);
-    this.previous_parent_width = null;
     this.timeline_getter = timeline_getter;
   }
   async init(parent_element) {
@@ -35157,14 +35156,10 @@ var PixiController = class {
   }
   // Default automatic Pixi resizing according to the parent is not reliable 
   // and the `app.renderer`'s `resize` event is fired on every browser window size change 
-  async resize(width, height) {
-    this.app.resize();
-    const width_changed = width !== this.previous_parent_width;
-    this.previous_parent_width = width;
-    if (width_changed) {
-      this.timeline_viewport_width = width;
-      await this.redraw_all_rows();
-    }
+  async resize(width, _height) {
+    this.timeline_viewport_width = width;
+    await this.redraw_all_rows();
+    this.app.queueResize();
   }
   destroy() {
     const rendererDestroyOptions = {
@@ -35178,8 +35173,8 @@ var PixiController = class {
     };
     this.app.destroy(rendererDestroyOptions, options);
   }
-  get_timeline_width() {
-    return this.timeline_width;
+  get_timeline_zoom() {
+    return this.timeline_zoom;
   }
   get_timeline_viewport_width() {
     return this.timeline_viewport_width;
@@ -35192,7 +35187,7 @@ var PixiController = class {
     await Promise.all(this.var_signal_rows.map(async (row) => {
       const timeline = await this.timeline_getter(
         row.signal_ref_index,
-        this.timeline_width,
+        this.timeline_zoom,
         this.timeline_viewport_width,
         this.timeline_viewport_x,
         this.row_height,
@@ -35206,7 +35201,7 @@ var PixiController = class {
     if (typeof row !== "undefined") {
       const timeline = await this.timeline_getter(
         row.signal_ref_index,
-        this.timeline_width,
+        this.timeline_zoom,
         this.timeline_viewport_width,
         this.timeline_viewport_x,
         this.row_height,
@@ -35221,6 +35216,14 @@ var PixiController = class {
       row.set_var_format(var_format);
       this.redraw_row(index);
     }
+  }
+  async zoom_or_pan(wheel_delta_y, shift_key) {
+    if (shift_key) {
+      this.timeline_viewport_x -= Math.sign(wheel_delta_y) * 20;
+    } else {
+      this.timeline_zoom -= Math.sign(wheel_delta_y) * 0.1;
+    }
+    this.redraw_all_rows();
   }
   remove_var(index) {
     if (typeof this.var_signal_rows[index] !== "undefined") {

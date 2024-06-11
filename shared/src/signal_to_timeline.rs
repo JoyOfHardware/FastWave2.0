@@ -3,39 +3,32 @@ use crate::*;
 pub fn signal_to_timeline(
     signal: &wellen::Signal,
     time_table: &[wellen::Time],
-    mut timeline_width: u32,
+    timeline_zoom: f64,
     timeline_viewport_width: u32,
-    timeline_viewport_x: u32,
+    timeline_viewport_x: i32,
     block_height: u32,
     var_format: VarFormat,
 ) -> Timeline {
-    println!("timeline_width: {timeline_width}");
-    println!("timeline_viewport_width: {timeline_viewport_width}");
-    println!("timeline_viewport_x: {timeline_viewport_x}");
-    println!("_____");
     const MIN_BLOCK_WIDTH: u32 = 3;
     // Courier New, 16px, sync with `label_style` in `pixi_canvas.rs`
     const LETTER_WIDTH: f64 = 9.61;
     const LETTER_HEIGHT: u32 = 18;
     const LABEL_X_PADDING: u32 = 10;
 
-    if timeline_width == 0 {
-        timeline_width = timeline_viewport_width;
-    }
-
     let Some(last_time) = time_table.last().copied() else {
         return Timeline::default();
     };
 
     let last_time = last_time as f64;
-    let timeline_width = timeline_width as f64;
+    let timeline_viewport_x = timeline_viewport_x as f64;
+    let timeline_width = timeline_viewport_width as f64 * timeline_zoom;
 
     let mut x_value_pairs = signal
         .iter_changes()
         .map(|(index, value)| {
             let index = index as usize;
             let time = time_table[index] as f64;
-            let x = time / last_time * timeline_width;
+            let x = time / last_time * timeline_width + timeline_viewport_x;
             (x, value)
         })
         .peekable();
@@ -46,7 +39,7 @@ pub fn signal_to_timeline(
         let next_block_x = if let Some((next_block_x, _)) = x_value_pairs.peek() {
             *next_block_x
         } else {
-            timeline_width
+            timeline_width + timeline_viewport_x
         };
 
         let block_width = (next_block_x - block_x) as u32;
@@ -70,7 +63,7 @@ pub fn signal_to_timeline(
         };
 
         let block = TimelineBlock {
-            x: block_x as u32,
+            x: block_x as i32,
             width: block_width,
             height: block_height,
             label,

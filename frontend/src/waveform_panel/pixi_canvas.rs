@@ -40,6 +40,7 @@ impl PixiCanvas {
                 let width = width.signal(),
                 let height = height.signal() => (*width, *height)
             }
+            .dedupe()
             .throttle(|| Timer::sleep(50))
             .for_each(
                 clone!((controller) move |(width, height)| clone!((controller) async move {
@@ -52,12 +53,12 @@ impl PixiCanvas {
         let task_with_controller = Mutable::new(None);
         // -- FastWave-specific --
         let timeline_getter = Rc::new(Closure::new(
-            |signal_ref_index, timeline_width, timeline_viewport_width, timeline_viewport_x, row_height, var_format| {
+            |signal_ref_index, timeline_zoom, timeline_viewport_width, timeline_viewport_x, row_height, var_format| {
                 future_to_promise(async move {
                     let signal_ref = wellen::SignalRef::from_index(signal_ref_index).unwrap_throw();
                     let timeline = platform::load_signal_and_get_timeline(
                         signal_ref,
-                        timeline_width,
+                        timeline_zoom,
                         timeline_viewport_width,
                         timeline_viewport_x,
                         row_height,
@@ -81,10 +82,18 @@ impl PixiCanvas {
                     width.set_neq(new_width);
                     height.set_neq(new_height);
                 }))
+                .update_raw_el(|raw_el| {
+                    // @TODO rewrite to a native Zoon API
+                    raw_el.event_handler(clone!((controller) move |event: events_extra::WheelEvent| {
+                        if let Some(controller) = controller.lock_ref().as_ref() {
+                            controller.zoom_or_pan(event.delta_y(), event.shift_key());
+                        }
+                    }))
+                })
                 .after_insert(clone!((controller, timeline_getter) move |element| {
                     Task::start(async move {
                         let pixi_controller = js_bridge::PixiController::new(
-                            width.get(),
+                            1.,
                             width.get(),
                             0,
                             row_height, 
@@ -122,13 +131,13 @@ mod js_bridge {
 
     type TimelinePromise = js_sys::Promise;
     type SignalRefIndex = usize;
-    type TimelineWidth = u32;
+    type TimelineZoom = f64;
     type TimelineViewportWidth = u32;
-    type TimelineViewportX = u32;
+    type TimelineViewportX = i32;
     type RowHeight = u32;
     type VarFormatJs = JsValue;
     type TimelineGetter =
-        Closure<dyn FnMut(SignalRefIndex, TimelineWidth, TimelineViewportWidth, TimelineViewportX, RowHeight, VarFormatJs) -> TimelinePromise>;
+        Closure<dyn FnMut(SignalRefIndex, TimelineZoom, TimelineViewportWidth, TimelineViewportX, RowHeight, VarFormatJs) -> TimelinePromise>;
 
     // Note: Add all corresponding methods to `frontend/typescript/pixi_canvas/pixi_canvas.ts`
     #[wasm_bindgen(module = "/typescript/bundles/pixi_canvas.js")]
@@ -139,9 +148,9 @@ mod js_bridge {
         // @TODO `row_height` and `row_gap` is FastWave-specific
         #[wasm_bindgen(constructor)]
         pub fn new(
-            timeline_width: u32,
+            timeline_zoom: f64,
             timeline_viewport_width: u32,
-            timeline_viewport_x: u32,
+            timeline_viewport_x: i32,
             row_height: u32,
             row_gap: u32,
             timeline_getter: &TimelineGetter,
@@ -157,18 +166,21 @@ mod js_bridge {
         pub fn destroy(this: &PixiController);
 
         #[wasm_bindgen(method)]
-        pub fn get_timeline_width(this: &PixiController) -> u32;
+        pub fn get_timeline_zoom(this: &PixiController) -> f64;
 
         #[wasm_bindgen(method)]
         pub fn get_timeline_viewport_width(this: &PixiController) -> u32;
 
         #[wasm_bindgen(method)]
-        pub fn get_timeline_viewport_x(this: &PixiController) -> u32;
+        pub fn get_timeline_viewport_x(this: &PixiController) -> i32;
 
         // -- FastWave-specific --
 
         #[wasm_bindgen(method)]
         pub fn set_var_format(this: &PixiController, index: usize, var_format: JsValue);
+
+        #[wasm_bindgen(method)]
+        pub fn zoom_or_pan(this: &PixiController, wheel_delta_y: f64, shift_key: bool);
 
         #[wasm_bindgen(method)]
         pub fn remove_var(this: &PixiController, index: usize);

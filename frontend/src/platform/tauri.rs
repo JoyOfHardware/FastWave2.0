@@ -19,9 +19,9 @@ pub(super) async fn get_hierarchy() -> wellen::Hierarchy {
 
 pub(super) async fn load_signal_and_get_timeline(
     signal_ref: wellen::SignalRef,
-    timeline_width: u32,
+    timeline_zoom: f64,
     timeline_viewport_width: u32,
-    timeline_viewport_x: u32,
+    timeline_viewport_x: i32,
     block_height: u32,
     var_format: shared::VarFormat,
 ) -> shared::Timeline {
@@ -29,7 +29,7 @@ pub(super) async fn load_signal_and_get_timeline(
     serde_wasm_bindgen::from_value(
         tauri_glue::load_signal_and_get_timeline(
             signal_ref.index(),
-            timeline_width,
+            timeline_zoom,
             timeline_viewport_width,
             timeline_viewport_x,
             block_height,
@@ -65,9 +65,9 @@ mod tauri_glue {
         #[wasm_bindgen(catch)]
         pub async fn load_signal_and_get_timeline(
             signal_ref_index: usize,
-            timeline_width: u32,
+            timeline_zoom: f64,
             timeline_viewport_width: u32,
-            timeline_viewport_x: u32,
+            timeline_viewport_x: i32,
             block_height: u32,
             var_format: JsValue,
         ) -> Result<JsValue, JsValue>;

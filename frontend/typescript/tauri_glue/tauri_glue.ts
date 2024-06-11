@@ -23,7 +23,7 @@ export async function get_hierarchy(): Promise<WellenHierarchy> {
 
 export async function load_signal_and_get_timeline(
     signal_ref_index: number, 
-    timeline_width: number,
+    timeline_zoom: number,
     timeline_viewport_width: number,
     timeline_viewport_x: number, 
     block_height: number,
@@ -31,7 +31,7 @@ export async function load_signal_and_get_timeline(
 ): Promise<Timeline> {
     return await invoke("load_signal_and_get_timeline", { 
         signal_ref_index, 
-        timeline_width, 
+        timeline_zoom, 
         timeline_viewport_width,
         timeline_viewport_x,
         block_height, 
