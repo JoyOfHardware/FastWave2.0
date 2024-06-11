@@ -86,7 +86,11 @@ impl PixiCanvas {
                     // @TODO rewrite to a native Zoon API
                     raw_el.event_handler(clone!((controller) move |event: events_extra::WheelEvent| {
                         if let Some(controller) = controller.lock_ref().as_ref() {
-                            controller.zoom_or_pan(event.delta_y(), event.shift_key());
+                            controller.zoom_or_pan(
+                                event.delta_y(), 
+                                event.shift_key(),
+                                event.offset_x() as u32,
+                            );
                         }
                     }))
                 })
@@ -180,7 +184,7 @@ mod js_bridge {
         pub fn set_var_format(this: &PixiController, index: usize, var_format: JsValue);
 
         #[wasm_bindgen(method)]
-        pub fn zoom_or_pan(this: &PixiController, wheel_delta_y: f64, shift_key: bool);
+        pub fn zoom_or_pan(this: &PixiController, wheel_delta_y: f64, shift_key: bool, offset_x: u32);
 
         #[wasm_bindgen(method)]
         pub fn remove_var(this: &PixiController, index: usize);

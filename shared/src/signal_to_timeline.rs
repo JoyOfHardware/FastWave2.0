@@ -23,6 +23,8 @@ pub fn signal_to_timeline(
     let timeline_viewport_x = timeline_viewport_x as f64;
     let timeline_width = timeline_viewport_width as f64 * timeline_zoom;
 
+    // @TODO hide blocks not visible in the viewport
+
     let mut x_value_pairs = signal
         .iter_changes()
         .map(|(index, value)| {
