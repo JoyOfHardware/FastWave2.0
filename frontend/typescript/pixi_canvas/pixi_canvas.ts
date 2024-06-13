@@ -149,15 +149,15 @@ export class PixiController {
 
     async zoom_or_pan(wheel_delta_y: number, shift_key: boolean, offset_x: number) {
         if (shift_key) {
-            this.timeline_viewport_x -= Math.sign(wheel_delta_y) * 20;
+            this.timeline_viewport_x += Math.sign(wheel_delta_y) * 20;
         } else {
-            // @TODO fix, bounds
+            // @TODO bounds
             const offset_x_ratio = offset_x / this.timeline_viewport_width;
             const old_timeline_width = this.timeline_viewport_width * this.timeline_zoom; 
-            this.timeline_zoom -= Math.sign(wheel_delta_y) * 0.1;
+            this.timeline_zoom -= Math.sign(wheel_delta_y) * this.timeline_zoom * 0.5;
             const new_timeline_width = this.timeline_viewport_width * this.timeline_zoom;
             const timeline_width_difference = new_timeline_width - old_timeline_width;
-            this.timeline_viewport_x -= timeline_width_difference * offset_x_ratio;
+            this.timeline_viewport_x += timeline_width_difference * offset_x_ratio;
         }
         this.redraw_all_rows();
     }
@@ -265,7 +265,7 @@ class VarSignalRow {
     draw() {
         // Screen can be null when we are, for instance, switching between miller columns and tree layout
         // and then the canvas has to be recreated
-        if (this.app.screen === null) {
+        if (this.app === null || this.app.screen === null) {
             return;
         }
 
