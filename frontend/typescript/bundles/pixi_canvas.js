@@ -35223,10 +35223,22 @@ var PixiController = class {
     } else {
       const offset_x_ratio = offset_x / this.timeline_viewport_width;
       const old_timeline_width = this.timeline_viewport_width * this.timeline_zoom;
-      this.timeline_zoom -= Math.sign(wheel_delta_y) * this.timeline_zoom * 0.5;
-      const new_timeline_width = this.timeline_viewport_width * this.timeline_zoom;
-      const timeline_width_difference = new_timeline_width - old_timeline_width;
-      this.timeline_viewport_x += timeline_width_difference * offset_x_ratio;
+      const new_zoom = this.timeline_zoom - Math.sign(wheel_delta_y) * this.timeline_zoom * 0.5;
+      const new_timeline_width = this.timeline_viewport_width * new_zoom;
+      if (new_timeline_width < this.timeline_viewport_width) {
+        this.timeline_zoom = 1;
+        this.timeline_viewport_x = 0;
+      } else {
+        const timeline_width_difference = new_timeline_width - old_timeline_width;
+        this.timeline_viewport_x += timeline_width_difference * offset_x_ratio;
+        this.timeline_zoom = new_zoom;
+      }
+    }
+    const timeline_width = this.timeline_viewport_width * this.timeline_zoom;
+    if (this.timeline_viewport_x < 0) {
+      this.timeline_viewport_x = 0;
+    } else if (this.timeline_viewport_x + this.timeline_viewport_width > timeline_width) {
+      this.timeline_viewport_x = timeline_width - this.timeline_viewport_width;
     }
     this.redraw_all_rows();
   }

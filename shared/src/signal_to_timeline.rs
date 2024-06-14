@@ -38,7 +38,7 @@ pub fn signal_to_timeline(
     while let Some((block_x, value)) = x_value_pairs.next() {
         if block_x >= (timeline_viewport_width as f64) {
             break;
-        } 
+        }
 
         let next_block_x = if let Some((next_block_x, _)) = x_value_pairs.peek() {
             *next_block_x
@@ -52,7 +52,7 @@ pub fn signal_to_timeline(
         }
         if block_x + (block_width as f64) <= 0. {
             continue;
-        } 
+        }
 
         // @TODO cache?
         let value = var_format.format(value);

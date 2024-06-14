@@ -4,11 +4,23 @@
 ---
 
 <p align="center">
-  <img width="800" src="docs/screenshot_firefox.png" alt="fastwave_screenshot_firefox" />
+  <img width="800" src="docs/screenshot_firefox.png" alt="Fastwave - Browser (Firefox)" />
+  Browser (Firefox)
 </p>
 
 <p align="center">
-  <img width="800" src="docs/video_desktop.gif" alt="fastwave_video_desktop" />
+  <img width="800" src="docs/video_desktop.gif" alt="Fastwave - Desktop, miller columns and tree" />
+  Desktop, miller columns and tree 
+</p>
+
+<p align="center">
+  <img width="800" src="docs/video_zoom_formatting_simple.gif" alt="Fastwave - Zoom, pan and basic number formats" />
+  Zoom, pan and basic number formats 
+</p>
+
+<p align="center">
+  <img width="800" src="docs/video_zoom_formatting.gif" alt="Fastwave - Zoom and all formats" />
+  Zoom and all formats 
 </p>
 
 ---
