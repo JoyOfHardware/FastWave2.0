@@ -38,13 +38,14 @@ pub async fn load_signal_and_get_timeline(
     var_format: shared::VarFormat,
 ) -> shared::Timeline {
     platform::load_signal_and_get_timeline(
-        signal_ref, 
+        signal_ref,
         timeline_zoom,
         timeline_viewport_width,
-        timeline_viewport_x, 
-        block_height, 
+        timeline_viewport_x,
+        block_height,
         var_format,
-    ).await
+    )
+    .await
 }
 
 pub async fn unload_signal(signal_ref: wellen::SignalRef) {

@@ -53,7 +53,12 @@ impl PixiCanvas {
         let task_with_controller = Mutable::new(None);
         // -- FastWave-specific --
         let timeline_getter = Rc::new(Closure::new(
-            |signal_ref_index, timeline_zoom, timeline_viewport_width, timeline_viewport_x, row_height, var_format| {
+            |signal_ref_index,
+             timeline_zoom,
+             timeline_viewport_width,
+             timeline_viewport_x,
+             row_height,
+             var_format| {
                 future_to_promise(async move {
                     let signal_ref = wellen::SignalRef::from_index(signal_ref_index).unwrap_throw();
                     let timeline = platform::load_signal_and_get_timeline(
@@ -84,15 +89,17 @@ impl PixiCanvas {
                 }))
                 .update_raw_el(|raw_el| {
                     // @TODO rewrite to a native Zoon API
-                    raw_el.event_handler(clone!((controller) move |event: events_extra::WheelEvent| {
-                        if let Some(controller) = controller.lock_ref().as_ref() {
-                            controller.zoom_or_pan(
-                                event.delta_y(), 
-                                event.shift_key(),
-                                event.offset_x() as u32,
-                            );
-                        }
-                    }))
+                    raw_el.event_handler(
+                        clone!((controller) move |event: events_extra::WheelEvent| {
+                            if let Some(controller) = controller.lock_ref().as_ref() {
+                                controller.zoom_or_pan(
+                                    event.delta_y(),
+                                    event.shift_key(),
+                                    event.offset_x() as u32,
+                                );
+                            }
+                        }),
+                    )
                 })
                 .after_insert(clone!((controller, timeline_getter) move |element| {
                     Task::start(async move {
@@ -100,8 +107,8 @@ impl PixiCanvas {
                             1.,
                             width.get(),
                             0,
-                            row_height, 
-                            row_gap, 
+                            row_height,
+                            row_gap,
                             &timeline_getter
                         );
                         pixi_controller.init(&element).await;
@@ -140,8 +147,16 @@ mod js_bridge {
     type TimelineViewportX = i32;
     type RowHeight = u32;
     type VarFormatJs = JsValue;
-    type TimelineGetter =
-        Closure<dyn FnMut(SignalRefIndex, TimelineZoom, TimelineViewportWidth, TimelineViewportX, RowHeight, VarFormatJs) -> TimelinePromise>;
+    type TimelineGetter = Closure<
+        dyn FnMut(
+            SignalRefIndex,
+            TimelineZoom,
+            TimelineViewportWidth,
+            TimelineViewportX,
+            RowHeight,
+            VarFormatJs,
+        ) -> TimelinePromise,
+    >;
 
     // Note: Add all corresponding methods to `frontend/typescript/pixi_canvas/pixi_canvas.ts`
     #[wasm_bindgen(module = "/typescript/bundles/pixi_canvas.js")]
@@ -184,7 +199,12 @@ mod js_bridge {
         pub fn set_var_format(this: &PixiController, index: usize, var_format: JsValue);
 
         #[wasm_bindgen(method)]
-        pub fn zoom_or_pan(this: &PixiController, wheel_delta_y: f64, shift_key: bool, offset_x: u32);
+        pub fn zoom_or_pan(
+            this: &PixiController,
+            wheel_delta_y: f64,
+            shift_key: bool,
+            offset_x: u32,
+        );
 
         #[wasm_bindgen(method)]
         pub fn remove_var(this: &PixiController, index: usize);

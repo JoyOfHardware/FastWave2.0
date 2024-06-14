@@ -56,16 +56,15 @@ async fn load_signal_and_get_timeline(
     waveform.load_signals_multi_threaded(&[signal_ref]);
     let signal = waveform.get_signal(signal_ref).unwrap();
     let time_table = waveform.time_table();
-    let timeline =
-        shared::signal_to_timeline(
-            signal, 
-            time_table, 
-            timeline_zoom, 
-            timeline_viewport_width, 
-            timeline_viewport_x,
-            block_height,
-            var_format,
-        );
+    let timeline = shared::signal_to_timeline(
+        signal,
+        time_table,
+        timeline_zoom,
+        timeline_viewport_width,
+        timeline_viewport_x,
+        block_height,
+        var_format,
+    );
     Ok(serde_json::to_value(timeline).unwrap())
 }
 
