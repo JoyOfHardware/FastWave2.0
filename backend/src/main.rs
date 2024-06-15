@@ -5,6 +5,10 @@ async fn frontend() -> Frontend {
         "<style>",
         include_str!("../style.css"),
         "</style>"
+    )).append_to_head(concat!(
+        "<script type=\"module\">",
+        include_str!("../index.js"),
+        "</script>"
     ))
 }
 

@@ -2,6 +2,7 @@ use std::rc::Rc;
 use zoon::*;
 
 mod platform;
+mod script_bridge;
 
 mod controls_panel;
 use controls_panel::ControlsPanel;
