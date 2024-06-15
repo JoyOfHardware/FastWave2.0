@@ -1,7 +1,9 @@
 port = 8080
 # port = 8443
 https = false
-cache_busting = true
+# @TODO how to import `pkg/frontend.js` with enabled cache busting?
+# @TODO add a switch to enable Typescript generator in mzoon?
+cache_busting = false
 backend_log_level = "warn" # "error" / "warn" / "info" / "debug" / "trace"
 
 [redirect]
@@ -23,4 +25,6 @@ frontend = [
 backend = [
     "backend/Cargo.toml",
     "backend/src",
+    "backend/index.js",
+    "backend/style.css",
 ]
