@@ -17,6 +17,13 @@ enum Layout {
     Columns,
 }
 
+#[derive(Default)]
+struct Store {
+    selected_var_refs: MutableVec<wellen::VarRef>,
+}
+
+static STORE: Lazy<Store> = lazy::default();
+
 fn main() {
     start_app("app", root);
     Task::start(async {
@@ -28,7 +35,7 @@ fn main() {
 
 fn root() -> impl Element {
     let hierarchy: Mutable<Option<Rc<wellen::Hierarchy>>> = <_>::default();
-    let selected_var_refs: MutableVec<wellen::VarRef> = <_>::default();
+    let selected_var_refs = STORE.selected_var_refs.clone();
     let layout: Mutable<Layout> = <_>::default();
     Column::new()
         .s(Height::fill())

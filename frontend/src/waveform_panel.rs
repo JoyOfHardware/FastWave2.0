@@ -130,9 +130,8 @@ impl WaveformPanel {
         )
         .await;
 
-        let timescale = hierarchy.timescale();
-        // @TODO remove
-        zoon::println!("{timescale:?}");
+        // @TODO render timeline with time units
+        // let timescale = hierarchy.timescale();
 
         // Note: Sync `timeline`'s type with the `Timeline` in `frontend/typescript/pixi_canvas/pixi_canvas.ts'
         let timeline = serde_wasm_bindgen::to_value(&timeline).unwrap_throw();

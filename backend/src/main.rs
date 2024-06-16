@@ -1,15 +1,14 @@
 use moon::*;
 
 async fn frontend() -> Frontend {
-    Frontend::new().title("FastWave").append_to_head(concat!(
-        "<style>",
-        include_str!("../style.css"),
-        "</style>"
-    )).append_to_head(concat!(
-        "<script type=\"module\">",
-        include_str!("../index.js"),
-        "</script>"
-    ))
+    Frontend::new()
+        .title("FastWave")
+        .append_to_head(concat!("<style>", include_str!("../style.css"), "</style>"))
+        .append_to_head(concat!(
+            "<script type=\"module\">",
+            include_str!("../index.js"),
+            "</script>"
+        ))
 }
 
 async fn up_msg_handler(_: UpMsgRequest<()>) {}
