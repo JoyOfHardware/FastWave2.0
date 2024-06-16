@@ -1,4 +1,4 @@
-use crate::{platform, Layout};
+use crate::{platform, script_bridge, Layout};
 use std::cell::Cell;
 use std::mem;
 use std::ops::Not;
@@ -108,6 +108,7 @@ impl ControlsPanel {
                     .item(self.load_button())
                     .item(self.layout_switcher()),
             )
+            .item(self.command_panel())
             .item_signal(
                 self.hierarchy
                     .signal_cloned()
@@ -254,6 +255,65 @@ impl ControlsPanel {
                     Layout::Columns => Layout::Tree,
                 })
             })
+    }
+
+    fn command_panel(&self) -> impl Element {
+        let command_result: Mutable<Option<Result<JsValue, JsValue>>> = <_>::default();
+        Row::new()
+            .item(self.command_editor_panel(command_result.clone()))
+            .item(self.command_result_panel(command_result.read_only()))
+    }
+
+    fn command_editor_panel(
+        &self,
+        command_result: Mutable<Option<Result<JsValue, JsValue>>>,
+    ) -> impl Element {
+        let (script, script_signal) = Mutable::new_and_signal_cloned(String::new());
+        TextArea::new()
+            .placeholder(Placeholder::new("FW.say_hello()"))
+            .label_hidden("command editor panel")
+            .text_signal(script_signal)
+            .on_change(clone!((script, command_result) move |text| {
+                script.set_neq(text);
+                command_result.set_neq(None);
+            }))
+            .on_key_down_event_with_options(EventOptions::new().preventable(), move |event| {
+                if event.key() == &Key::Enter {
+                    let RawKeyboardEvent::KeyDown(raw_event) = event.raw_event.clone();
+                    if raw_event.shift_key() {
+                        // @TODO move `prevent_default` to MZ API (next to the `pass_to_parent` method?)
+                        raw_event.prevent_default();
+                        let result = script_bridge::strict_eval(&script.lock_ref());
+                        command_result.set(Some(result));
+                    }
+                }
+            })
+    }
+
+    fn command_result_panel(
+        &self,
+        command_result: ReadOnlyMutable<Option<Result<JsValue, JsValue>>>,
+    ) -> impl Element {
+        El::new().child_signal(
+            command_result
+                .signal_cloned()
+                .map_some(|result| match result {
+                    Ok(js_value) => {
+                        if let Some(string_value) = js_value.as_string() {
+                            string_value
+                        } else if let Some(number_value) = js_value.as_f64() {
+                            number_value.to_string()
+                        } else if let Some(bool_value) = js_value.as_bool() {
+                            bool_value.to_string()
+                        } else {
+                            format!("{js_value:?}")
+                        }
+                    }
+                    Err(js_value) => {
+                        format!("Error: {js_value:?}")
+                    }
+                }),
+        )
     }
 
     fn scopes_panel(&self, hierarchy: Rc<wellen::Hierarchy>) -> impl Element {

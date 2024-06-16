@@ -4,11 +4,11 @@ use wellen::simple::Waveform;
 use zoon::*;
 
 #[derive(Default)]
-struct Store {
+struct BrowserPlatformStore {
     waveform: Mutex<Option<Waveform>>,
 }
 
-static STORE: Lazy<Store> = lazy::default();
+static BROWSER_PLATFORM_STORE: Lazy<BrowserPlatformStore> = lazy::default();
 
 pub(super) async fn show_window() {}
 
@@ -25,7 +25,7 @@ pub(super) async fn pick_and_load_waveform(
     let Ok(waveform) = waveform else {
         panic!("Waveform file reading failed")
     };
-    *STORE.waveform.lock().unwrap_throw() = Some(waveform);
+    *BROWSER_PLATFORM_STORE.waveform.lock().unwrap_throw() = Some(waveform);
     Some(file.name())
 }
 
@@ -63,12 +63,12 @@ pub(super) async fn pick_and_load_waveform(
 //     let Ok(waveform) = waveform else {
 //         panic!("Waveform file reading failed")
 //     };
-//     *STORE.waveform.lock().unwrap_throw() = Some(waveform);
+//     *BROWSER_PLATFORM_STORE.waveform.lock().unwrap_throw() = Some(waveform);
 //     Some(file.name())
 // }
 
 pub(super) async fn get_hierarchy() -> wellen::Hierarchy {
-    let waveform = STORE.waveform.lock().unwrap_throw();
+    let waveform = BROWSER_PLATFORM_STORE.waveform.lock().unwrap_throw();
     let hierarchy = waveform.as_ref().unwrap_throw().hierarchy();
     // @TODO Wrap `hierarchy` in `Waveform` with `Rc/Arc` or add the method `take` / `clone` or refactor?
     serde_json::from_value(serde_json::to_value(hierarchy).unwrap_throw()).unwrap_throw()
@@ -82,7 +82,7 @@ pub(super) async fn load_signal_and_get_timeline(
     block_height: u32,
     var_format: shared::VarFormat,
 ) -> shared::Timeline {
-    let mut waveform_lock = STORE.waveform.lock().unwrap();
+    let mut waveform_lock = BROWSER_PLATFORM_STORE.waveform.lock().unwrap();
     let waveform = waveform_lock.as_mut().unwrap();
     waveform.load_signals_multi_threaded(&[signal_ref]);
     let signal = waveform.get_signal(signal_ref).unwrap();
@@ -100,7 +100,7 @@ pub(super) async fn load_signal_and_get_timeline(
 }
 
 pub(super) async fn unload_signal(signal_ref: wellen::SignalRef) {
-    let mut waveform_lock = STORE.waveform.lock().unwrap_throw();
+    let mut waveform_lock = BROWSER_PLATFORM_STORE.waveform.lock().unwrap_throw();
     let waveform = waveform_lock.as_mut().unwrap_throw();
     waveform.unload_signals(&[signal_ref]);
 }
