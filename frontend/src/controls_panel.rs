@@ -260,6 +260,7 @@ impl ControlsPanel {
     fn command_panel(&self) -> impl Element {
         let command_result: Mutable<Option<Result<JsValue, JsValue>>> = <_>::default();
         Row::new()
+            .s(Gap::both(30))
             .item(self.command_editor_panel(command_result.clone()))
             .item(self.command_result_panel(command_result.read_only()))
     }
@@ -268,9 +269,35 @@ impl ControlsPanel {
         &self,
         command_result: Mutable<Option<Result<JsValue, JsValue>>>,
     ) -> impl Element {
+        Column::new()
+            .s(Gap::new().y(10))
+            .item(
+                Row::new()
+                    .s(Gap::new().x(15))
+                    .s(Padding::new().x(5))
+                    .item(El::new().child("Javascript command"))
+                    .item(El::new().s(Align::new().right()).child("Shift + Enter"))
+            )
+            .item(self.command_editor(command_result))
+    }
+
+    fn command_editor(
+        &self,
+        command_result: Mutable<Option<Result<JsValue, JsValue>>>,
+    ) -> impl Element {
         let (script, script_signal) = Mutable::new_and_signal_cloned(String::new());
+        // @TODO perhaps replace with an element with syntax highlighter like https://github.com/WebCoder49/code-input later
         TextArea::new()
-            .placeholder(Placeholder::new("FW.say_hello()"))
+            .s(Background::new().color(color!("SlateBlue")))
+            .s(Padding::new().x(10).y(8))
+            .s(RoundedCorners::all(15))
+            .s(Height::default().min(50))
+            .s(Width::default().min(300))
+            .s(Font::new().tracking(1).weight(FontWeight::Medium).color(color!("White")).family([FontFamily::new("Courier New"), FontFamily::Monospace]))
+            .s(Shadows::new([Shadow::new().inner().color(color!("DarkSlateBlue")).blur(4)]))
+            // @TODO to MZ API? (together with autocomplete and others?)
+            .update_raw_el(|raw_el| raw_el.attr("spellcheck", "false"))
+            .placeholder(Placeholder::new("FW.say_hello()").s(Font::new().color(color!("LightBlue"))))
             .label_hidden("command editor panel")
             .text_signal(script_signal)
             .on_change(clone!((script, command_result) move |text| {
@@ -294,11 +321,28 @@ impl ControlsPanel {
         &self,
         command_result: ReadOnlyMutable<Option<Result<JsValue, JsValue>>>,
     ) -> impl Element {
-        El::new().child_signal(
-            command_result
-                .signal_cloned()
-                .map_some(|result| match result {
-                    Ok(js_value) => {
+        Column::new()
+            .s(Gap::new().y(10))
+            .s(Align::new().top())
+            .s(Scrollbars::both())
+            .item(
+                El::new()
+                    .child("Command result")
+            )
+            .item(self.command_result_el(command_result))
+    }
+
+    fn command_result_el(
+        &self,
+        command_result: ReadOnlyMutable<Option<Result<JsValue, JsValue>>>,
+    ) -> impl Element {
+        El::new()
+            .s(Font::new().tracking(1).weight(FontWeight::Medium).color(color!("White")).family([FontFamily::new("Courier New"), FontFamily::Monospace]))
+            .s(Scrollbars::both())
+            .s(Height::default().max(100))
+            .child_signal(
+            command_result.signal_ref(|result| match result {
+                    Some(Ok(js_value)) => {
                         if let Some(string_value) = js_value.as_string() {
                             string_value
                         } else if let Some(number_value) = js_value.as_f64() {
@@ -309,9 +353,10 @@ impl ControlsPanel {
                             format!("{js_value:?}")
                         }
                     }
-                    Err(js_value) => {
+                    Some(Err(js_value)) => {
                         format!("Error: {js_value:?}")
                     }
+                    None => "-".to_owned()
                 }),
         )
     }
