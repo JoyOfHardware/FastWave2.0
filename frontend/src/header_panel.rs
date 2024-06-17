@@ -191,7 +191,7 @@ impl HeaderPanel {
                 Row::new()
                     .s(Gap::new().x(15))
                     .s(Padding::new().x(5))
-                    .item(El::new().child("Javascript command"))
+                    .item(El::new().child("Javascript commands"))
                     .item(El::new().s(Align::new().right()).child("Shift + Enter"))
             )
             .item(self.command_editor(command_result))

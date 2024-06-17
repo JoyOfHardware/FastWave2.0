@@ -6,7 +6,7 @@ use std::rc::Rc;
 use wellen::GetItem;
 use zoon::*;
 
-const SCOPE_VAR_ROW_MAX_WIDTH: u32 = 480;
+const MILLER_COLUMN_SCOPE_VAR_ROW_MIN_WIDTH: u32 = 480;
 const MILLER_COLUMN_MAX_HEIGHT: u32 = 500;
 
 #[derive(Clone)]
@@ -116,7 +116,7 @@ impl ControlsPanel {
 
     fn scopes_panel(&self, hierarchy: Rc<wellen::Hierarchy>) -> impl Element {
         Column::new()
-            .s(Height::fill().min(150))
+            .s(Height::fill())
             .s(Scrollbars::y_and_clip_x())
             .s(Gap::new().y(20))
             .s(Width::fill())
@@ -165,7 +165,7 @@ impl ControlsPanel {
         let s = self.clone();
         El::new()
             .s(Height::fill())
-            .s(Scrollbars::both())
+            .s(Scrollbars::y_and_clip_x())
             .s(Width::fill())
             .child_signal(layout.signal().map(move |layout| match layout {
                 Layout::Tree => {
@@ -279,7 +279,6 @@ impl ControlsPanel {
                 Layout::Tree => level * 30,
                 Layout::Columns => 0,
             })))
-            .s(Width::default().max(SCOPE_VAR_ROW_MAX_WIDTH))
             .after_remove(move |_| {
                 drop(task_collapse_on_parent_collapse);
                 drop(task_expand_or_collapse_on_selected_scope_in_level_change);
@@ -370,7 +369,6 @@ impl ControlsPanel {
     ) -> impl Element {
         Button::new()
             .s(Padding::new().x(15).y(5))
-            .s(Font::new().wrap_anywhere())
             .on_hovered_change(move |is_hovered| button_hovered.set_neq(is_hovered))
             .on_press(
                 clone!((self.selected_scope_ref => selected_scope_ref, scope_for_ui) move || {
@@ -384,6 +382,7 @@ impl ControlsPanel {
     fn vars_panel(&self, hierarchy: Rc<wellen::Hierarchy>) -> impl Element {
         let selected_scope_ref = self.selected_scope_ref.clone();
         Column::new()
+            .s(Align::new().top())
             .s(Gap::new().y(20))
             .s(Height::fill().min(150))
             .s(Scrollbars::y_and_clip_x())
@@ -446,7 +445,7 @@ impl ControlsPanel {
                 self.layout
                     .signal()
                     .map(|layout| matches!(layout, Layout::Columns))
-                    .map_true(|| Width::default().min(SCOPE_VAR_ROW_MAX_WIDTH)),
+                    .map_true(|| Width::default().min(MILLER_COLUMN_SCOPE_VAR_ROW_MIN_WIDTH)),
             ))
             .s(Align::new().left())
             .s(Gap::new().y(10))
@@ -464,7 +463,6 @@ impl ControlsPanel {
         Row::new()
             .s(Gap::new().x(10))
             .s(Padding::new().right(15))
-            .s(Width::default().max(SCOPE_VAR_ROW_MAX_WIDTH))
             .item(self.var_button(var_for_ui.clone()))
             .item(self.var_tag_type(var_for_ui.clone()))
             .item(self.var_tag_index(var_for_ui.clone()))
@@ -477,7 +475,6 @@ impl ControlsPanel {
         let selected_var_ref = self.selected_var_refs.clone();
         El::new().child(
             Button::new()
-                .s(Font::new().wrap_anywhere())
                 .s(Padding::new().x(15).y(5))
                 .s(Background::new().color_signal(
                     hovered_signal.map_bool(|| color!("MediumSlateBlue"), || color!("SlateBlue")),
