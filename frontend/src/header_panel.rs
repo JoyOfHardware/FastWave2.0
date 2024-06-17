@@ -220,8 +220,12 @@ impl HeaderPanel {
                 .inner()
                 .color(color!("DarkSlateBlue"))
                 .blur(4)]))
-            // @TODO to MZ API? (together with autocomplete and others?)
-            .update_raw_el(|raw_el| raw_el.attr("spellcheck", "false"))
+            // @TODO `spellcheck` and `resize` to MZ API? (together with autocomplete and others?)
+            .update_raw_el(|raw_el| {
+                raw_el
+                    .attr("spellcheck", "false")
+                    .style("resize", "vertical")
+            })
             .placeholder(
                 Placeholder::new("FW.say_hello()").s(Font::new().color(color!("LightBlue"))),
             )
