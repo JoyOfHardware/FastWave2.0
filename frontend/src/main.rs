@@ -10,12 +10,17 @@ use controls_panel::ControlsPanel;
 mod waveform_panel;
 use waveform_panel::WaveformPanel;
 
+mod header_panel;
+use header_panel::HeaderPanel;
+
 #[derive(Clone, Copy, Default)]
 enum Layout {
     Tree,
     #[default]
     Columns,
 }
+
+type Filename = String;
 
 #[derive(Default)]
 struct Store {
@@ -37,10 +42,16 @@ fn root() -> impl Element {
     let hierarchy: Mutable<Option<Rc<wellen::Hierarchy>>> = <_>::default();
     let selected_var_refs = STORE.selected_var_refs.clone();
     let layout: Mutable<Layout> = <_>::default();
+    let loaded_filename: Mutable<Option<Filename>> = <_>::default();
     Column::new()
         .s(Height::fill())
         .s(Scrollbars::y_and_clip_x())
         .s(Font::new().color(color!("Lavender")))
+        .item(HeaderPanel::new(
+            hierarchy.clone(),
+            layout.clone(),
+            loaded_filename.clone(),
+        ))
         .item(
             Row::new()
                 .s(Height::fill())
@@ -49,6 +60,7 @@ fn root() -> impl Element {
                     hierarchy.clone(),
                     selected_var_refs.clone(),
                     layout.clone(),
+                    loaded_filename,
                 ))
                 .item_signal(
                     layout
