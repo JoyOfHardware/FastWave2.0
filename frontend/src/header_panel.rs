@@ -1,16 +1,16 @@
 use crate::{platform, script_bridge, Filename, Layout};
-use std::rc::Rc;
+use std::sync::Arc;
 use zoon::*;
 
 pub struct HeaderPanel {
-    hierarchy: Mutable<Option<Rc<wellen::Hierarchy>>>,
+    hierarchy: Mutable<Option<Arc<wellen::Hierarchy>>>,
     layout: Mutable<Layout>,
     loaded_filename: Mutable<Option<Filename>>,
 }
 
 impl HeaderPanel {
     pub fn new(
-        hierarchy: Mutable<Option<Rc<wellen::Hierarchy>>>,
+        hierarchy: Mutable<Option<Arc<wellen::Hierarchy>>>,
         layout: Mutable<Layout>,
         loaded_filename: Mutable<Option<Filename>>,
     ) -> impl Element {
@@ -68,7 +68,7 @@ impl HeaderPanel {
                 Task::start(async move {
                     if let Some(filename) = platform::pick_and_load_waveform(None).await {
                         loaded_filename.set_neq(Some(filename));
-                        hierarchy.set(Some(Rc::new(platform::get_hierarchy().await)))
+                        hierarchy.set(Some(Arc::new(platform::get_hierarchy().await)))
                     }
                 })
             })
@@ -267,22 +267,30 @@ impl HeaderPanel {
                 .family([FontFamily::new("Courier New"), FontFamily::Monospace]))
             .s(Scrollbars::both())
             .s(Height::default().max(100))
-            .child_signal(command_result.signal_ref(|result| match result {
-                Some(Ok(js_value)) => {
-                    if let Some(string_value) = js_value.as_string() {
-                        string_value
-                    } else if let Some(number_value) = js_value.as_f64() {
-                        number_value.to_string()
-                    } else if let Some(bool_value) = js_value.as_bool() {
-                        bool_value.to_string()
-                    } else {
-                        format!("{js_value:?}")
+            .child_signal(command_result.signal_ref(|result| {
+                fn format_complex_js_value(js_value: &JsValue) -> String {
+                    let value = format!("{js_value:?}");
+                    let value = value.strip_prefix("JsValue(").unwrap_throw();
+                    let value = value.strip_suffix(')').unwrap_throw();
+                    value.to_owned()
+                }
+                match result {
+                    Some(Ok(js_value)) => {
+                        if let Some(string_value) = js_value.as_string() {
+                            string_value
+                        } else if let Some(number_value) = js_value.as_f64() {
+                            number_value.to_string()
+                        } else if let Some(bool_value) = js_value.as_bool() {
+                            bool_value.to_string()
+                        } else {
+                            format_complex_js_value(js_value)
+                        }
                     }
+                    Some(Err(js_value)) => {
+                        format!("ERROR: {}", format_complex_js_value(js_value))
+                    }
+                    None => "-".to_owned(),
                 }
-                Some(Err(js_value)) => {
-                    format!("Error: {js_value:?}")
-                }
-                None => "-".to_owned(),
             }))
     }
 }

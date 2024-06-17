@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::sync::Arc;
 use zoon::*;
 
 mod platform;
@@ -25,6 +25,7 @@ type Filename = String;
 #[derive(Default)]
 struct Store {
     selected_var_refs: MutableVec<wellen::VarRef>,
+    hierarchy: Mutable<Option<Arc<wellen::Hierarchy>>>,
 }
 
 static STORE: Lazy<Store> = lazy::default();
@@ -39,7 +40,7 @@ fn main() {
 }
 
 fn root() -> impl Element {
-    let hierarchy: Mutable<Option<Rc<wellen::Hierarchy>>> = <_>::default();
+    let hierarchy = STORE.hierarchy.clone();
     let selected_var_refs = STORE.selected_var_refs.clone();
     let layout: Mutable<Layout> = <_>::default();
     let loaded_filename: Mutable<Option<Filename>> = <_>::default();

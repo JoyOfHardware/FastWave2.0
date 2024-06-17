@@ -35316,10 +35316,12 @@ var VarSignalRow = class {
     this.draw();
   }
   draw() {
-    if (this.app === null || this.app.screen === null) {
+    if (this?.app?.screen?.width === void 0) {
       return;
     }
-    this.row_container_background.width = this.app.screen.width;
+    if (this?.row_container_background?._texture?.orig?.width !== void 0) {
+      this.row_container_background.width = this.app.screen.width;
+    }
     this.signal_blocks_container.removeChildren();
     this.timeline.blocks.forEach((timeline_block) => {
       const signal_block = new Container();
