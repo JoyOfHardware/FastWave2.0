@@ -176,6 +176,7 @@ impl HeaderPanel {
             .s(Align::new().top())
             .s(Gap::both(30))
             .s(Scrollbars::both())
+            .s(Width::fill())
             .item(self.command_editor_panel(command_result.clone()))
             .item(self.command_result_panel(command_result.read_only()))
     }
@@ -187,6 +188,7 @@ impl HeaderPanel {
         Column::new()
             .s(Align::new().top())
             .s(Gap::new().y(10))
+            .s(Width::growable())
             .item(
                 Row::new()
                     .s(Gap::new().x(15))
@@ -208,7 +210,7 @@ impl HeaderPanel {
             .s(Padding::new().x(10).y(8))
             .s(RoundedCorners::all(15))
             .s(Height::default().min(50))
-            .s(Width::default().min(300))
+            .s(Width::fill().min(300))
             .s(Font::new()
                 .tracking(1)
                 .weight(FontWeight::Medium)
@@ -251,6 +253,7 @@ impl HeaderPanel {
             .s(Align::new().top())
             .s(Scrollbars::both())
             .s(Padding::new().x(5))
+            .s(Width::growable().max(750))
             .item(El::new().child("Command result"))
             .item(self.command_result_el(command_result))
     }
