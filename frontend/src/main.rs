@@ -54,8 +54,9 @@ fn root() -> impl Element {
         ))
         .item(
             Row::new()
-                .s(Height::fill())
+                .s(Scrollbars::y_and_clip_x())
                 .s(Gap::new().x(15))
+                .s(Height::growable().min(150))
                 .item(ControlsPanel::new(
                     hierarchy.clone(),
                     selected_var_refs.clone(),
