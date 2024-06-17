@@ -89,7 +89,8 @@ impl PixiCanvas {
                 }))
                 .update_raw_el(|raw_el| {
                     // @TODO rewrite to a native Zoon API
-                    raw_el.event_handler_with_options(EventOptions::new().preventable(),
+                    raw_el.event_handler_with_options(
+                        EventOptions::new().preventable(),
                         clone!((controller) move |event: events_extra::WheelEvent| {
                             event.prevent_default();
                             if let Some(controller) = controller.lock_ref().as_ref() {

@@ -1,6 +1,6 @@
-use zoon::*;
-use crate::{platform, script_bridge, Layout, Filename};
+use crate::{platform, script_bridge, Filename, Layout};
 use std::rc::Rc;
+use zoon::*;
 
 pub struct HeaderPanel {
     hierarchy: Mutable<Option<Rc<wellen::Hierarchy>>>,
@@ -32,7 +32,7 @@ impl HeaderPanel {
                     .s(Padding::new().top(5))
                     .s(Gap::both(15))
                     .item(self.load_button())
-                    .item(self.layout_switcher())
+                    .item(self.layout_switcher()),
             )
             .item(self.command_panel())
     }
@@ -192,7 +192,7 @@ impl HeaderPanel {
                     .s(Gap::new().x(15))
                     .s(Padding::new().x(5))
                     .item(El::new().child("Javascript commands"))
-                    .item(El::new().s(Align::new().right()).child("Shift + Enter"))
+                    .item(El::new().s(Align::new().right()).child("Shift + Enter")),
             )
             .item(self.command_editor(command_result))
     }
@@ -209,11 +209,20 @@ impl HeaderPanel {
             .s(RoundedCorners::all(15))
             .s(Height::default().min(50))
             .s(Width::default().min(300))
-            .s(Font::new().tracking(1).weight(FontWeight::Medium).color(color!("White")).family([FontFamily::new("Courier New"), FontFamily::Monospace]))
-            .s(Shadows::new([Shadow::new().inner().color(color!("DarkSlateBlue")).blur(4)]))
+            .s(Font::new()
+                .tracking(1)
+                .weight(FontWeight::Medium)
+                .color(color!("White"))
+                .family([FontFamily::new("Courier New"), FontFamily::Monospace]))
+            .s(Shadows::new([Shadow::new()
+                .inner()
+                .color(color!("DarkSlateBlue"))
+                .blur(4)]))
             // @TODO to MZ API? (together with autocomplete and others?)
             .update_raw_el(|raw_el| raw_el.attr("spellcheck", "false"))
-            .placeholder(Placeholder::new("FW.say_hello()").s(Font::new().color(color!("LightBlue"))))
+            .placeholder(
+                Placeholder::new("FW.say_hello()").s(Font::new().color(color!("LightBlue"))),
+            )
             .label_hidden("command editor panel")
             .text_signal(script_signal)
             .on_change(clone!((script, command_result) move |text| {
@@ -242,10 +251,7 @@ impl HeaderPanel {
             .s(Align::new().top())
             .s(Scrollbars::both())
             .s(Padding::new().x(5))
-            .item(
-                El::new()
-                    .child("Command result")
-            )
+            .item(El::new().child("Command result"))
             .item(self.command_result_el(command_result))
     }
 
@@ -254,27 +260,29 @@ impl HeaderPanel {
         command_result: ReadOnlyMutable<Option<Result<JsValue, JsValue>>>,
     ) -> impl Element {
         El::new()
-            .s(Font::new().tracking(1).weight(FontWeight::Medium).color(color!("White")).family([FontFamily::new("Courier New"), FontFamily::Monospace]))
+            .s(Font::new()
+                .tracking(1)
+                .weight(FontWeight::Medium)
+                .color(color!("White"))
+                .family([FontFamily::new("Courier New"), FontFamily::Monospace]))
             .s(Scrollbars::both())
             .s(Height::default().max(100))
-            .child_signal(
-            command_result.signal_ref(|result| match result {
-                    Some(Ok(js_value)) => {
-                        if let Some(string_value) = js_value.as_string() {
-                            string_value
-                        } else if let Some(number_value) = js_value.as_f64() {
-                            number_value.to_string()
-                        } else if let Some(bool_value) = js_value.as_bool() {
-                            bool_value.to_string()
-                        } else {
-                            format!("{js_value:?}")
-                        }
+            .child_signal(command_result.signal_ref(|result| match result {
+                Some(Ok(js_value)) => {
+                    if let Some(string_value) = js_value.as_string() {
+                        string_value
+                    } else if let Some(number_value) = js_value.as_f64() {
+                        number_value.to_string()
+                    } else if let Some(bool_value) = js_value.as_bool() {
+                        bool_value.to_string()
+                    } else {
+                        format!("{js_value:?}")
                     }
-                    Some(Err(js_value)) => {
-                        format!("Error: {js_value:?}")
-                    }
-                    None => "-".to_owned()
-                }),
-        )
+                }
+                Some(Err(js_value)) => {
+                    format!("Error: {js_value:?}")
+                }
+                None => "-".to_owned(),
+            }))
     }
 }
