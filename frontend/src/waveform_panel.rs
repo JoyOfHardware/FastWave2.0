@@ -1,5 +1,5 @@
 use crate::platform;
-use std::rc::Rc;
+use std::sync::Arc;
 use wellen::GetItem;
 use zoon::*;
 
@@ -12,13 +12,13 @@ const ROW_GAP: u32 = 4;
 #[derive(Clone)]
 pub struct WaveformPanel {
     selected_var_refs: MutableVec<wellen::VarRef>,
-    hierarchy: Mutable<Option<Rc<wellen::Hierarchy>>>,
+    hierarchy: Mutable<Option<Arc<wellen::Hierarchy>>>,
     canvas_controller: Mutable<ReadOnlyMutable<Option<PixiController>>>,
 }
 
 impl WaveformPanel {
     pub fn new(
-        hierarchy: Mutable<Option<Rc<wellen::Hierarchy>>>,
+        hierarchy: Mutable<Option<Arc<wellen::Hierarchy>>>,
         selected_var_refs: MutableVec<wellen::VarRef>,
     ) -> impl Element {
         Self {
@@ -111,7 +111,7 @@ impl WaveformPanel {
 
     async fn push_var(
         controller: &PixiController,
-        hierarchy: &Mutable<Option<Rc<wellen::Hierarchy>>>,
+        hierarchy: &Mutable<Option<Arc<wellen::Hierarchy>>>,
         var_ref: wellen::VarRef,
     ) {
         let hierarchy = hierarchy.get_cloned().unwrap();

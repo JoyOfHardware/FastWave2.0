@@ -3,6 +3,7 @@ use std::cell::Cell;
 use std::mem;
 use std::ops::Not;
 use std::rc::Rc;
+use std::sync::Arc;
 use wellen::GetItem;
 use zoon::*;
 
@@ -32,7 +33,7 @@ struct ScopeForUI {
 #[derive(Clone)]
 pub struct ControlsPanel {
     selected_scope_ref: Mutable<Option<wellen::ScopeRef>>,
-    hierarchy: Mutable<Option<Rc<wellen::Hierarchy>>>,
+    hierarchy: Mutable<Option<Arc<wellen::Hierarchy>>>,
     selected_var_refs: MutableVec<wellen::VarRef>,
     layout: Mutable<Layout>,
     loaded_filename: Mutable<Option<Filename>>,
@@ -40,7 +41,7 @@ pub struct ControlsPanel {
 
 impl ControlsPanel {
     pub fn new(
-        hierarchy: Mutable<Option<Rc<wellen::Hierarchy>>>,
+        hierarchy: Mutable<Option<Arc<wellen::Hierarchy>>>,
         selected_var_refs: MutableVec<wellen::VarRef>,
         layout: Mutable<Layout>,
         loaded_filename: Mutable<Option<Filename>>,
@@ -114,7 +115,7 @@ impl ControlsPanel {
             ))
     }
 
-    fn scopes_panel(&self, hierarchy: Rc<wellen::Hierarchy>) -> impl Element {
+    fn scopes_panel(&self, hierarchy: Arc<wellen::Hierarchy>) -> impl Element {
         Column::new()
             .s(Height::fill())
             .s(Scrollbars::y_and_clip_x())
@@ -129,7 +130,7 @@ impl ControlsPanel {
             .item(self.scopes_list(hierarchy))
     }
 
-    fn scopes_list(&self, hierarchy: Rc<wellen::Hierarchy>) -> impl Element {
+    fn scopes_list(&self, hierarchy: Arc<wellen::Hierarchy>) -> impl Element {
         let layout = self.layout.clone();
         let mut scopes_for_ui = Vec::new();
         let mut max_level_index: usize = 0;
@@ -379,7 +380,7 @@ impl ControlsPanel {
             .label(scope_for_ui.name)
     }
 
-    fn vars_panel(&self, hierarchy: Rc<wellen::Hierarchy>) -> impl Element {
+    fn vars_panel(&self, hierarchy: Arc<wellen::Hierarchy>) -> impl Element {
         let selected_scope_ref = self.selected_scope_ref.clone();
         Column::new()
             .s(Align::new().top())
@@ -401,7 +402,7 @@ impl ControlsPanel {
     fn vars_list(
         &self,
         selected_scope_ref: wellen::ScopeRef,
-        hierarchy: Rc<wellen::Hierarchy>,
+        hierarchy: Arc<wellen::Hierarchy>,
     ) -> impl Element {
         let vars_for_ui = hierarchy
             .get(selected_scope_ref)
