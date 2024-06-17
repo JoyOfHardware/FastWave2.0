@@ -26,6 +26,7 @@ type Filename = String;
 struct Store {
     selected_var_refs: MutableVec<wellen::VarRef>,
     hierarchy: Mutable<Option<Arc<wellen::Hierarchy>>>,
+    loaded_filename: Mutable<Option<Filename>>,
 }
 
 static STORE: Lazy<Store> = lazy::default();
@@ -43,7 +44,7 @@ fn root() -> impl Element {
     let hierarchy = STORE.hierarchy.clone();
     let selected_var_refs = STORE.selected_var_refs.clone();
     let layout: Mutable<Layout> = <_>::default();
-    let loaded_filename: Mutable<Option<Filename>> = <_>::default();
+    let loaded_filename = STORE.loaded_filename.clone();
     Column::new()
         .s(Height::fill())
         .s(Scrollbars::y_and_clip_x())

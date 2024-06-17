@@ -140,7 +140,7 @@ impl HeaderPanel {
                                     platform::pick_and_load_waveform(Some(file)).await
                                 {
                                     loaded_filename.set_neq(Some(filename));
-                                    hierarchy.set(Some(Rc::new(platform::get_hierarchy().await)))
+                                    hierarchy.set(Some(Arc::new(platform::get_hierarchy().await)))
                                 }
                             })
                         })

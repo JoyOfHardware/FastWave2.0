@@ -49,8 +49,9 @@ impl FW {
         0
     }
 
-    pub fn loaded_filename() -> String {
-        format!("todo loaded filename")
+    /// JS: `FW.loaded_filename()` -> `simple.vcd`
+    pub fn loaded_filename() -> Option<String> {
+        STORE.loaded_filename.get_cloned()
     }
 
     /// JS: `FW.selected_vars()` -> `["simple_tb.s.A", "simple_tb.s.B"]`
