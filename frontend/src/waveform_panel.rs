@@ -220,6 +220,16 @@ impl WaveformPanel {
             .s(RoundedCorners::new().left(15).right(5))
             .label(
                 El::new()
+                    .update_raw_el(|raw_el| {
+                        raw_el
+                            // @TODO move `title` to MZ API? (as `native_tooltip`?)
+                            .attr("title", name)
+                            // Note: `text-overflow` / ellipsis` doesn't work with flex and dynamic sizes
+                            .style("text-overflow", "ellipsis")
+                            .style("display", "inline-block")
+                    })
+                    .s(Scrollbars::both().visible(false))
+                    .s(Width::default().max(400))
                     .s(Align::new().left())
                     .s(Padding::new().left(20).right(17).y(10))
                     .child(name),
