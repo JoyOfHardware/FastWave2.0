@@ -67,6 +67,22 @@ pub(super) async fn pick_and_load_waveform(
 //     Some(file.name())
 // }
 
+// @TODO allow only supported file type (*.fw.js)
+// @TODO remove the `file` parameter once we don't have to use FileInput element
+pub async fn load_file_with_selected_vars(
+    file: Option<gloo_file::File>,
+) -> Option<super::JavascriptCode> {
+    let file = file.unwrap_throw();
+
+    let javascript_code = gloo_file::futures::read_as_text(&file).await.unwrap_throw();
+
+    Some(javascript_code)
+}
+
+// @TODO Use alternative `load_file_with_selected_vars` version once `showOpenFilePicker` is supported by Safari and Firefox
+// https://caniuse.com/mdn-api_window_showopenfilepicker
+// (see the `pick_and_load_waveform` method above)
+
 pub(super) async fn get_hierarchy() -> wellen::Hierarchy {
     let waveform = BROWSER_PLATFORM_STORE.waveform.lock().unwrap_throw();
     let hierarchy = waveform.as_ref().unwrap_throw().hierarchy();

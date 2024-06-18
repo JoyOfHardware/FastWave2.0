@@ -14,6 +14,7 @@ mod browser;
 use browser as platform;
 
 type Filename = String;
+type JavascriptCode = String;
 
 pub async fn show_window() {
     platform::show_window().await
@@ -23,6 +24,12 @@ pub async fn show_window() {
 // @TODO remove the `file` parameter once we don't have to use FileInput element
 pub async fn pick_and_load_waveform(file: Option<gloo_file::File>) -> Option<Filename> {
     platform::pick_and_load_waveform(file).await
+}
+
+// @TODO allow only supported file type (*.fw.js)
+// @TODO remove the `file` parameter once we don't have to use FileInput element
+pub async fn load_file_with_selected_vars(file: Option<gloo_file::File>) -> Option<JavascriptCode> {
+    platform::load_file_with_selected_vars(file).await
 }
 
 pub async fn get_hierarchy() -> wellen::Hierarchy {

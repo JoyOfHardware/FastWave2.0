@@ -1,8 +1,10 @@
+use std::fs;
 use std::sync::Mutex;
 use tauri_plugin_dialog::DialogExt;
 use wellen::simple::Waveform;
 
 type Filename = String;
+type JavascriptCode = String;
 
 #[derive(Default)]
 struct Store {
@@ -30,6 +32,18 @@ async fn pick_and_load_waveform(
     };
     *store.waveform.lock().unwrap() = Some(waveform);
     Ok(Some(file_response.name.unwrap()))
+}
+
+#[tauri::command(rename_all = "snake_case")]
+async fn load_file_with_selected_vars(app: tauri::AppHandle) -> Result<Option<JavascriptCode>, ()> {
+    let Some(file_response) = app.dialog().file().blocking_pick_file() else {
+        return Ok(None);
+    };
+    // @TODO Tokio's `fs` or a Tauri `fs`?
+    let Ok(javascript_code) = fs::read_to_string(file_response.path) else {
+        panic!("Selected vars file reading failed")
+    };
+    Ok(Some(javascript_code))
 }
 
 #[tauri::command(rename_all = "snake_case")]
@@ -91,6 +105,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             show_window,
             pick_and_load_waveform,
+            load_file_with_selected_vars,
             get_hierarchy,
             load_signal_and_get_timeline,
             unload_signal,
