@@ -29,11 +29,60 @@ impl WaveformPanel {
         .root()
     }
 
-    // @TODO autoscroll down
     fn root(&self) -> impl Element {
+        Column::new()
+            .s(Padding::all(20))
+            .s(Scrollbars::y_and_clip_x())
+            .s(Width::growable())
+            .s(Height::fill())
+            .s(Gap::new().y(20))
+            .item(self.selected_vars_controls())
+            .item(self.vars_and_timelines_panel())
+    }
+
+    fn selected_vars_controls(&self) -> impl Element {
+        Row::new()
+            .s(Align::center())
+            .s(Gap::new().x(20))
+            .item(self.load_selected_vars_button())
+            .item(El::new().child("Selected Variables"))
+            .item(self.save_selected_vars_button())
+    }
+
+    fn load_selected_vars_button(&self) -> impl Element {
+        let (hovered, hovered_signal) = Mutable::new_and_signal(false);
+        Button::new()
+            .s(Padding::new().x(20).y(10))
+            .s(Background::new().color_signal(
+                hovered_signal.map_bool(|| color!("MediumSlateBlue"), || color!("SlateBlue")),
+            ))
+            .s(RoundedCorners::all(15))
+            .label("Load")
+            .on_hovered_change(move |is_hovered| hovered.set_neq(is_hovered))
+            .on_press(move || {
+                zoon::println!("LOAD!")
+            })
+    }
+
+    fn save_selected_vars_button(&self) -> impl Element {
+        let (hovered, hovered_signal) = Mutable::new_and_signal(false);
+        Button::new()
+            .s(Padding::new().x(20).y(10))
+            .s(Background::new().color_signal(
+                hovered_signal.map_bool(|| color!("MediumSlateBlue"), || color!("SlateBlue")),
+            ))
+            .s(RoundedCorners::all(15))
+            .label("Save")
+            .on_hovered_change(move |is_hovered| hovered.set_neq(is_hovered))
+            .on_press(move || {
+                zoon::println!("SAVE!")
+            })
+    }
+
+    // @TODO autoscroll down
+    fn vars_and_timelines_panel(&self) -> impl Element {
         let selected_vars_panel_height_getter: Mutable<u32> = <_>::default();
         Row::new()
-            .s(Padding::all(20))
             .s(Scrollbars::y_and_clip_x())
             .s(Width::growable())
             .s(Height::fill())
