@@ -65,22 +65,29 @@ fn root() -> impl Element {
                     layout.clone(),
                     loaded_filename,
                 ))
-                .item_signal(
-                    layout
-                        .signal()
-                        .map(|layout| matches!(layout, Layout::Tree))
-                        .map_true(
-                            clone!((hierarchy, selected_var_refs) move || WaveformPanel::new(
+                .item_signal({
+                    let hierarchy = hierarchy.clone();
+                    let selected_var_refs = selected_var_refs.clone();
+                    map_ref!{
+                        let layout = layout.signal(),
+                        let hierarchy_is_some = hierarchy.signal_ref(Option::is_some) => {
+                            (*hierarchy_is_some && matches!(layout, Layout::Tree)).then(clone!((hierarchy, selected_var_refs) move || WaveformPanel::new(
                                 hierarchy.clone(),
                                 selected_var_refs.clone(),
-                            )),
-                        ),
-                ),
+                            )))
+                        }
+                    }
+                }),
         )
         .item_signal(
-            layout
-                .signal()
-                .map(|layout| matches!(layout, Layout::Columns))
-                .map_true(move || WaveformPanel::new(hierarchy.clone(), selected_var_refs.clone())),
+            map_ref!{
+                let layout = layout.signal(),
+                let hierarchy_is_some = hierarchy.signal_ref(Option::is_some) => {
+                    (*hierarchy_is_some && matches!(layout, Layout::Columns)).then(clone!((hierarchy, selected_var_refs) move || WaveformPanel::new(
+                        hierarchy.clone(),
+                        selected_var_refs.clone(),
+                    )))
+                }
+            }
         )
 }
