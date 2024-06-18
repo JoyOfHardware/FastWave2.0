@@ -13,6 +13,15 @@ pub(super) async fn pick_and_load_waveform(
         .as_string()
 }
 
+pub(super) async fn load_file_with_selected_vars(
+    _file: Option<gloo_file::File>,
+) -> Option<super::JavascriptCode> {
+    tauri_glue::load_file_with_selected_vars()
+        .await
+        .unwrap_throw()
+        .as_string()
+}
+
 pub(super) async fn get_hierarchy() -> wellen::Hierarchy {
     serde_wasm_bindgen::from_value(tauri_glue::get_hierarchy().await.unwrap_throw()).unwrap_throw()
 }
@@ -58,6 +67,9 @@ mod tauri_glue {
 
         #[wasm_bindgen(catch)]
         pub async fn pick_and_load_waveform() -> Result<JsValue, JsValue>;
+
+        #[wasm_bindgen(catch)]
+        pub async fn load_file_with_selected_vars() -> Result<JsValue, JsValue>;
 
         #[wasm_bindgen(catch)]
         pub async fn get_hierarchy() -> Result<JsValue, JsValue>;

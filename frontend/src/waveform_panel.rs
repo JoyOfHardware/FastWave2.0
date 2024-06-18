@@ -1,4 +1,4 @@
-use crate::platform;
+use crate::{platform, script_bridge};
 use std::sync::Arc;
 use wellen::GetItem;
 use zoon::*;
@@ -46,7 +46,7 @@ impl WaveformPanel {
             .s(Gap::new().x(20))
             .s(Width::fill())
             .item(Spacer::fill())
-            .item(self.save_load_selected_vars_buttons())
+            .item(self.load_save_selected_vars_buttons())
             .item(self.keys_info())
     }
 
@@ -64,7 +64,7 @@ impl WaveformPanel {
         )
     }
 
-    fn save_load_selected_vars_buttons(&self) -> impl Element {
+    fn load_save_selected_vars_buttons(&self) -> impl Element {
         Row::new()
             .s(Gap::new().x(20))
             .item(self.load_selected_vars_button())
@@ -76,6 +76,7 @@ impl WaveformPanel {
             .item(self.save_selected_vars_button())
     }
 
+    #[cfg(FASTWAVE_PLATFORM = "TAURI")]
     fn load_selected_vars_button(&self) -> impl Element {
         let (hovered, hovered_signal) = Mutable::new_and_signal(false);
         Button::new()
@@ -83,10 +84,85 @@ impl WaveformPanel {
             .s(Background::new().color_signal(
                 hovered_signal.map_bool(|| color!("MediumSlateBlue"), || color!("SlateBlue")),
             ))
+            .s(Align::new().left())
             .s(RoundedCorners::all(15))
             .label("Load")
             .on_hovered_change(move |is_hovered| hovered.set_neq(is_hovered))
-            .on_press(move || zoon::println!("LOAD!"))
+            .on_press(|| {
+                Task::start(async move {
+                    if let Some(javascript_code) =
+                        platform::load_file_with_selected_vars(None).await
+                    {
+                        match script_bridge::strict_eval(&javascript_code) {
+                            Ok(js_value) => {
+                                zoon::println!("File with selected vars loaded: {js_value:?}")
+                            }
+                            Err(js_value) => {
+                                zoon::eprintln!(
+                                    "Failed to load file with selected vars: {js_value:?}"
+                                )
+                            }
+                        }
+                    }
+                })
+            })
+    }
+
+    #[cfg(FASTWAVE_PLATFORM = "BROWSER")]
+    fn load_selected_vars_button(&self) -> impl Element {
+        let (hovered, hovered_signal) = Mutable::new_and_signal(false);
+        let file_input_id = "file_input_for_load_selected_vars_button";
+        Row::new()
+            .item(
+                Label::new()
+                    .s(Padding::new().x(20).y(10))
+                    .s(Background::new().color_signal(
+                        hovered_signal
+                            .map_bool(|| color!("MediumSlateBlue"), || color!("SlateBlue")),
+                    ))
+                    .s(Align::new().left())
+                    .s(RoundedCorners::all(15))
+                    .s(Cursor::new(CursorIcon::Pointer))
+                    .label("Load")
+                    .on_hovered_change(move |is_hovered| hovered.set_neq(is_hovered))
+                    .for_input(file_input_id),
+            )
+            .item(
+                // @TODO https://github.com/MoonZoon/MoonZoon/issues/39
+                // + https://developer.mozilla.org/en-US/docs/Web/API/File_API/Using_files_from_web_applications#using_hidden_file_input_elements_using_the_click_method
+                TextInput::new().id(file_input_id).update_raw_el(|raw_el| {
+                    let dom_element = raw_el.dom_element();
+                    raw_el
+                        .style("display", "none")
+                        .attr("type", "file")
+                        .event_handler(move |_: events::Input| {
+                            let Some(file_list) =
+                                dom_element.files().map(gloo_file::FileList::from)
+                            else {
+                                zoon::println!("file list is `None`");
+                                return;
+                            };
+                            let Some(file) = file_list.first().cloned() else {
+                                zoon::println!("file list is empty");
+                                return;
+                            };
+                            Task::start(async move {
+                                if let Some(javascript_code) =
+                                    platform::load_file_with_selected_vars(Some(file)).await
+                                {
+                                    match script_bridge::strict_eval(&javascript_code) {
+                                        Ok(js_value) => zoon::println!(
+                                            "File with selected vars loaded: {js_value:?}"
+                                        ),
+                                        Err(js_value) => zoon::eprintln!(
+                                            "Failed to load file with selected vars: {js_value:?}"
+                                        ),
+                                    }
+                                }
+                            })
+                        })
+                }),
+            )
     }
 
     fn save_selected_vars_button(&self) -> impl Element {

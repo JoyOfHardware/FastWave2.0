@@ -2517,6 +2517,9 @@ async function show_window() {
 async function pick_and_load_waveform() {
   return await invoke2("pick_and_load_waveform");
 }
+async function load_file_with_selected_vars() {
+  return await invoke2("load_file_with_selected_vars");
+}
 async function get_hierarchy() {
   return await invoke2("get_hierarchy");
 }
@@ -2535,6 +2538,7 @@ async function unload_signal(signal_ref_index) {
 }
 export {
   get_hierarchy,
+  load_file_with_selected_vars,
   load_signal_and_get_timeline,
   pick_and_load_waveform,
   show_window,

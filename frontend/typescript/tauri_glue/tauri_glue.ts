@@ -5,6 +5,7 @@ import { core } from '@tauri-apps/api'
 const invoke = core.invoke;
 
 type Filename = string;
+type JavascriptCode = string;
 type WellenHierarchy = unknown;
 type Timeline = unknown;
 type VarFormat = unknown;
@@ -15,6 +16,10 @@ export async function show_window(): Promise<void> {
 
 export async function pick_and_load_waveform(): Promise<Filename | undefined> {
     return await invoke("pick_and_load_waveform");
+}
+
+export async function load_file_with_selected_vars(): Promise<JavascriptCode | undefined> {
+    return await invoke("load_file_with_selected_vars");
 }
 
 export async function get_hierarchy(): Promise<WellenHierarchy> {

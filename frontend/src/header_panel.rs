@@ -79,7 +79,7 @@ impl HeaderPanel {
         let (hovered, hovered_signal) = Mutable::new_and_signal(false);
         let hierarchy = self.hierarchy.clone();
         let loaded_filename = self.loaded_filename.clone();
-        let file_input_id = "file_input";
+        let file_input_id = "file_input_for_load_waveform_button";
         Row::new()
             .item(
                 Label::new()
