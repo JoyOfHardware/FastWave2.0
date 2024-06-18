@@ -9,6 +9,7 @@ use zoon::*;
 
 const MILLER_COLUMN_SCOPE_VAR_ROW_MIN_WIDTH: u32 = 480;
 const MILLER_COLUMN_MAX_HEIGHT: u32 = 500;
+const TREE_MAX_WIDTH: u32 = 600;
 
 #[derive(Clone)]
 struct VarForUI {
@@ -92,6 +93,12 @@ impl ControlsPanel {
                     .map(|layout| matches!(layout, Layout::Columns))
                     .map_true(|| Width::fill()),
             ))
+            .s(Width::with_signal_self(layout.signal().map(
+                move |layout| match layout {
+                    Layout::Tree => Width::growable().max(TREE_MAX_WIDTH),
+                    Layout::Columns => Width::fill(),
+                },
+            )))
             .s(Height::with_signal_self(layout.signal().map(
                 move |layout| match layout {
                     Layout::Tree => Height::fill(),
