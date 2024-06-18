@@ -393,7 +393,8 @@ impl ControlsPanel {
             .s(Align::new().top())
             .s(Gap::new().y(20))
             .s(Height::fill().min(150))
-            .s(Scrollbars::y_and_clip_x())
+            .s(Width::fill())
+            .s(Scrollbars::both())
             .item_signal(
                 self.layout
                     .signal()
@@ -448,17 +449,18 @@ impl ControlsPanel {
                 }
             }));
 
+        let layout = self.layout.clone();
         Column::new()
-            .s(Width::with_signal_self(
-                self.layout
-                    .signal()
-                    .map(|layout| matches!(layout, Layout::Columns))
-                    .map_true(|| Width::default().min(MILLER_COLUMN_SCOPE_VAR_ROW_MIN_WIDTH)),
-            ))
+            .s(Width::with_signal_self(layout.signal().map(
+                move |layout| match layout {
+                    Layout::Tree => Width::fill(),
+                    Layout::Columns => Width::default().min(MILLER_COLUMN_SCOPE_VAR_ROW_MIN_WIDTH),
+                },
+            )))
             .s(Align::new().left())
             .s(Gap::new().y(10))
             .s(Height::fill())
-            .s(Scrollbars::y_and_clip_x())
+            .s(Scrollbars::both())
             .items_signal_vec(
                 vars_for_ui_mutable_vec
                     .signal_vec_cloned()
@@ -470,12 +472,13 @@ impl ControlsPanel {
     fn var_row(&self, var_for_ui: VarForUI) -> impl Element {
         Row::new()
             .s(Gap::new().x(10))
-            .s(Padding::new().right(15))
             .item(self.var_button(var_for_ui.clone()))
             .item(self.var_tag_type(var_for_ui.clone()))
             .item(self.var_tag_index(var_for_ui.clone()))
             .item(self.var_tag_bit(var_for_ui.clone()))
             .item(self.var_tag_direction(var_for_ui))
+            // Note: Padding or 0 height don't work for some reasons here
+            .item(El::new().s(Width::exact(10)).s(Height::exact(1)))
     }
 
     fn var_button(&self, var_for_ui: VarForUI) -> impl Element {
