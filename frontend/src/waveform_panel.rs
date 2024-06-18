@@ -1,4 +1,4 @@
-use crate::{platform, script_bridge};
+use crate::{platform, script_bridge, Filename};
 use std::sync::Arc;
 use wellen::GetItem;
 use zoon::*;
@@ -13,6 +13,7 @@ const ROW_GAP: u32 = 4;
 pub struct WaveformPanel {
     selected_var_refs: MutableVec<wellen::VarRef>,
     hierarchy: Mutable<Option<Arc<wellen::Hierarchy>>>,
+    loaded_filename: Mutable<Option<Filename>>,
     canvas_controller: Mutable<ReadOnlyMutable<Option<PixiController>>>,
 }
 
@@ -20,10 +21,12 @@ impl WaveformPanel {
     pub fn new(
         hierarchy: Mutable<Option<Arc<wellen::Hierarchy>>>,
         selected_var_refs: MutableVec<wellen::VarRef>,
+        loaded_filename: Mutable<Option<Filename>>,
     ) -> impl Element {
         Self {
             selected_var_refs,
             hierarchy,
+            loaded_filename,
             canvas_controller: Mutable::new(Mutable::default().read_only()),
         }
         .root()
@@ -167,6 +170,9 @@ impl WaveformPanel {
 
     fn save_selected_vars_button(&self) -> impl Element {
         let (hovered, hovered_signal) = Mutable::new_and_signal(false);
+        let loaded_filename = self.loaded_filename.clone();
+        let selected_var_refs = self.selected_var_refs.clone();
+        let hierarchy = self.hierarchy.clone();
         Button::new()
             .s(Padding::new().x(20).y(10))
             .s(Background::new().color_signal(
@@ -175,7 +181,34 @@ impl WaveformPanel {
             .s(RoundedCorners::all(15))
             .label("Save")
             .on_hovered_change(move |is_hovered| hovered.set_neq(is_hovered))
-            .on_press(move || zoon::println!("SAVE!"))
+            .on_press(move || {
+                let loaded_filename = loaded_filename.get_cloned().unwrap_throw();
+                let file_name = format!("{}_vars.fw.js", loaded_filename.replace('.', "_"));
+
+                let hierarchy = hierarchy.get_cloned().unwrap_throw();
+                let mut full_var_names = Vec::new();
+                for var_ref in selected_var_refs.lock_ref().as_slice() {
+                    let var = hierarchy.get(*var_ref);
+                    let var_name = var.full_name(&hierarchy);
+                    full_var_names.push(format!("\"{var_name}\""));
+                }
+                let full_var_names_string = full_var_names.join(",\n\t\t");
+                let file_content = include_str!("waveform_panel/template_vars.px.js")
+                    .replacen("{LOADED_FILENAME}", &loaded_filename, 1)
+                    .replacen("{FULL_VAR_NAMES}", &full_var_names_string, 1);
+
+                // @TODO we need to use ugly code with temp anchor element until (if ever)
+                // `showSaveFilePicker` is supported in Safari and Firefox (https://caniuse.com/?search=showSaveFilePicker)
+                let file = gloo_file::File::new(&file_name, file_content.as_str());
+                let file_object_url = gloo_file::ObjectUrl::from(file);
+                let a = document().create_element("a").unwrap_throw();
+                a.set_attribute("href", &file_object_url).unwrap_throw();
+                a.set_attribute("download", &file_name).unwrap_throw();
+                a.set_attribute("style", "display: none;").unwrap_throw();
+                dom::body().append_child(&a).unwrap_throw();
+                a.unchecked_ref::<web_sys::HtmlElement>().click();
+                a.remove();
+            })
     }
 
     // @TODO autoscroll down
