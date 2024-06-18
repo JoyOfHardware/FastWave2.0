@@ -33,7 +33,7 @@ impl WaveformPanel {
         Column::new()
             .s(Padding::all(20))
             .s(Scrollbars::y_and_clip_x())
-            .s(Width::growable())
+            .s(Width::fill())
             .s(Height::fill())
             .s(Gap::new().y(20))
             .item(self.selected_vars_controls())
@@ -44,8 +44,35 @@ impl WaveformPanel {
         Row::new()
             .s(Align::center())
             .s(Gap::new().x(20))
+            .s(Width::fill())
+            .item(Spacer::fill())
+            .item(self.save_load_selected_vars_buttons())
+            .item(self.keys_info())
+    }
+
+    fn keys_info(&self) -> impl Element {
+        El::new().s(Width::fill()).child(
+            Row::new()
+                .s(Align::new().center_x())
+                .s(Gap::new().x(15))
+                .item(El::new().s(Font::new().no_wrap()).child("Zoom: Wheel"))
+                .item(
+                    El::new()
+                        .s(Font::new().no_wrap())
+                        .child("Pan: Shift + Wheel"),
+                ),
+        )
+    }
+
+    fn save_load_selected_vars_buttons(&self) -> impl Element {
+        Row::new()
+            .s(Gap::new().x(20))
             .item(self.load_selected_vars_button())
-            .item(El::new().child("Selected Variables"))
+            .item(
+                El::new()
+                    .s(Font::new().no_wrap())
+                    .child("Selected Variables"),
+            )
             .item(self.save_selected_vars_button())
     }
 
@@ -59,9 +86,7 @@ impl WaveformPanel {
             .s(RoundedCorners::all(15))
             .label("Load")
             .on_hovered_change(move |is_hovered| hovered.set_neq(is_hovered))
-            .on_press(move || {
-                zoon::println!("LOAD!")
-            })
+            .on_press(move || zoon::println!("LOAD!"))
     }
 
     fn save_selected_vars_button(&self) -> impl Element {
@@ -74,9 +99,7 @@ impl WaveformPanel {
             .s(RoundedCorners::all(15))
             .label("Save")
             .on_hovered_change(move |is_hovered| hovered.set_neq(is_hovered))
-            .on_press(move || {
-                zoon::println!("SAVE!")
-            })
+            .on_press(move || zoon::println!("SAVE!"))
     }
 
     // @TODO autoscroll down
