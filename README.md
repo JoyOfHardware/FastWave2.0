@@ -23,6 +23,16 @@
   Zoom and all formats 
 </p>
 
+<p align="center">
+  <img width="800" src="docs/video_javascript_commands.gif" alt="Fastwave - Javascript commands" />
+  Javascript commands 
+</p>
+
+<p align="center">
+  <img width="800" src="docs/video_load_save_selected_vars.gif" alt="Fastwave - Load and save selected variables" />
+  Load and save selected variables 
+</p>
+
 ---
 
 ### Install requirements:
