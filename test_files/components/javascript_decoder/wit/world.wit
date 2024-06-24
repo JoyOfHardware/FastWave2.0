@@ -1,0 +1,16 @@
+package component:javascript-decoder;
+
+interface host {
+    log: func(message: string);
+}
+
+interface decoder {
+    init: func();
+    name: func() -> string;
+    format-signal-value: func(value: string) -> string;
+}
+
+world component {
+    import host;
+    export decoder;
+}
