@@ -9,6 +9,8 @@ type JavascriptCode = string;
 type WellenHierarchy = unknown;
 type Timeline = unknown;
 type VarFormat = unknown;
+type AddedDecodersCount = number;
+type DecoderPath = string;
 
 export async function show_window(): Promise<void> {
     return await invoke("show_window");
@@ -46,4 +48,8 @@ export async function load_signal_and_get_timeline(
 
 export async function unload_signal(signal_ref_index: number): Promise<void> {
     return await invoke("unload_signal", { signal_ref_index });
+}
+
+export async function add_decoders(decoder_paths: Array<DecoderPath>): Promise<AddedDecodersCount> {
+    return await invoke("add_decoders", { decoder_paths });
 }

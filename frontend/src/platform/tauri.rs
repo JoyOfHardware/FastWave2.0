@@ -56,6 +56,13 @@ pub(super) async fn unload_signal(signal_ref: wellen::SignalRef) {
         .unwrap_throw()
 }
 
+pub(super) async fn add_decoders(
+    decoder_paths: Vec<super::DecoderPath>,
+) -> super::AddedDecodersCount {
+    serde_wasm_bindgen::from_value(tauri_glue::add_decoders(decoder_paths).await.unwrap_throw())
+        .unwrap_throw()
+}
+
 mod tauri_glue {
     use zoon::*;
 
@@ -86,5 +93,10 @@ mod tauri_glue {
 
         #[wasm_bindgen(catch)]
         pub async fn unload_signal(signal_ref_index: usize) -> Result<(), JsValue>;
+
+        #[wasm_bindgen(catch)]
+        pub async fn add_decoders(
+            decoder_paths: Vec<super::super::DecoderPath>,
+        ) -> Result<JsValue, JsValue>;
     }
 }

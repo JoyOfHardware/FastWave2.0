@@ -241,8 +241,10 @@ impl HeaderPanel {
                     if raw_event.shift_key() {
                         // @TODO move `prevent_default` to MZ API (next to the `pass_to_parent` method?)
                         raw_event.prevent_default();
-                        let result = script_bridge::strict_eval(&script.lock_ref());
-                        command_result.set(Some(result));
+                        Task::start(clone!((script, command_result) async move {
+                            let result = script_bridge::strict_eval(&script.lock_ref()).await;
+                            command_result.set(Some(result));
+                        }));
                     }
                 }
             })

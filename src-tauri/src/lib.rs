@@ -5,6 +5,10 @@ use wellen::simple::Waveform;
 
 type Filename = String;
 type JavascriptCode = String;
+type AddedDecodersCount = usize;
+type DecoderPath = String;
+
+mod component_manager;
 
 #[derive(Default)]
 struct Store {
@@ -91,6 +95,11 @@ async fn unload_signal(signal_ref_index: usize, store: tauri::State<'_, Store>) 
     Ok(())
 }
 
+#[tauri::command(rename_all = "snake_case")]
+async fn add_decoders(decoder_paths: Vec<DecoderPath>) -> Result<AddedDecodersCount, ()> {
+    Ok(component_manager::add_decoders(decoder_paths))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     // https://github.com/tauri-apps/tauri/issues/8462
@@ -109,6 +118,7 @@ pub fn run() {
             get_hierarchy,
             load_signal_and_get_timeline,
             unload_signal,
+            add_decoders,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

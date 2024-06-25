@@ -15,6 +15,8 @@ use browser as platform;
 
 type Filename = String;
 type JavascriptCode = String;
+type AddedDecodersCount = usize;
+type DecoderPath = String;
 
 pub async fn show_window() {
     platform::show_window().await
@@ -57,4 +59,8 @@ pub async fn load_signal_and_get_timeline(
 
 pub async fn unload_signal(signal_ref: wellen::SignalRef) {
     platform::unload_signal(signal_ref).await
+}
+
+pub async fn add_decoders(decoder_paths: Vec<DecoderPath>) -> AddedDecodersCount {
+    platform::add_decoders(decoder_paths).await
 }

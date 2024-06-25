@@ -1,16 +1,15 @@
-use crate::STORE;
+use crate::{platform, STORE};
 use wellen::GetItem;
 use zoon::*;
 
 type FullVarName = String;
+type AddedDecodersCount = usize;
 type DecoderPath = String;
 
-#[wasm_bindgen(
-    inline_js = r#"export function strict_eval(code) { "use strict"; return eval?.(`${code}`) }"#
-)]
+#[wasm_bindgen(module = "/typescript/bundles/strict_eval.js")]
 extern "C" {
     #[wasm_bindgen(catch)]
-    pub fn strict_eval(code: &str) -> Result<JsValue, JsValue>;
+    pub async fn strict_eval(code: &str) -> Result<JsValue, JsValue>;
 }
 
 #[wasm_bindgen]
@@ -70,8 +69,7 @@ impl FW {
     }
 
     /// JS: `FW.add_decoders(["test_files/components/rust_decoder/rust_decoder.wasm"])` -> `1`
-    pub fn add_decoders(decoder_paths: Vec<DecoderPath>) -> usize {
-        zoon::println!("decoders: {decoder_paths:#?}");
-        0
-    } 
+    pub async fn add_decoders(decoder_paths: Vec<DecoderPath>) -> AddedDecodersCount {
+        platform::add_decoders(decoder_paths).await
+    }
 }
