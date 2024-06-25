@@ -3,6 +3,7 @@ use wellen::GetItem;
 use zoon::*;
 
 type FullVarName = String;
+type DecoderPath = String;
 
 #[wasm_bindgen(
     inline_js = r#"export function strict_eval(code) { "use strict"; return eval?.(`${code}`) }"#
@@ -67,4 +68,10 @@ impl FW {
         }
         Vec::new()
     }
+
+    /// JS: `FW.add_decoders(["test_files/components/rust_decoder/rust_decoder.wasm"])` -> `1`
+    pub fn add_decoders(decoder_paths: Vec<DecoderPath>) -> usize {
+        zoon::println!("decoders: {decoder_paths:#?}");
+        0
+    } 
 }
