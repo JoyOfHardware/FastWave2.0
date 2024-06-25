@@ -2536,7 +2536,11 @@ async function load_signal_and_get_timeline(signal_ref_index, timeline_zoom, tim
 async function unload_signal(signal_ref_index) {
   return await invoke2("unload_signal", { signal_ref_index });
 }
+async function add_decoders(decoder_paths) {
+  return await invoke2("add_decoders", { decoder_paths });
+}
 export {
+  add_decoders,
   get_hierarchy,
   load_file_with_selected_vars,
   load_signal_and_get_timeline,

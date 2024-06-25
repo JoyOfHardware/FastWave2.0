@@ -96,7 +96,7 @@ impl WaveformPanel {
                     if let Some(javascript_code) =
                         platform::load_file_with_selected_vars(None).await
                     {
-                        match script_bridge::strict_eval(&javascript_code) {
+                        match script_bridge::strict_eval(&javascript_code).await {
                             Ok(js_value) => {
                                 zoon::println!("File with selected vars loaded: {js_value:?}")
                             }
@@ -153,7 +153,7 @@ impl WaveformPanel {
                                 if let Some(javascript_code) =
                                     platform::load_file_with_selected_vars(Some(file)).await
                                 {
-                                    match script_bridge::strict_eval(&javascript_code) {
+                                    match script_bridge::strict_eval(&javascript_code).await {
                                         Ok(js_value) => zoon::println!(
                                             "File with selected vars loaded: {js_value:?}"
                                         ),

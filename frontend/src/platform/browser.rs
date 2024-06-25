@@ -1,7 +1,7 @@
 use shared::wellen_helpers;
 use std::sync::Mutex;
 use wellen::simple::Waveform;
-use zoon::*;
+use zoon::{*, eprintln};
 
 #[derive(Default)]
 struct BrowserPlatformStore {
@@ -119,4 +119,12 @@ pub(super) async fn unload_signal(signal_ref: wellen::SignalRef) {
     let mut waveform_lock = BROWSER_PLATFORM_STORE.waveform.lock().unwrap_throw();
     let waveform = waveform_lock.as_mut().unwrap_throw();
     waveform.unload_signals(&[signal_ref]);
+}
+
+pub(super) async fn add_decoders(
+    _decoder_paths: Vec<super::DecoderPath>,
+) -> super::AddedDecodersCount {
+    // @TODO error message for user
+    eprintln!("Adding decoders is not supported in the browser.");
+    0
 }
