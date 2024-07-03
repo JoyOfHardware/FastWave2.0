@@ -1,8 +1,8 @@
 #[allow(warnings)]
 mod bindings;
 
-use bindings::component::rust_decoder::host;
-use bindings::exports::component::rust_decoder::decoder;
+use bindings::component::decoder::host;
+use bindings::exports::component::decoder::decoder;
 
 macro_rules! log {
     ($($arg:tt)*) => (host::log(&format!($($arg)*)))

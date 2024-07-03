@@ -1,4 +1,4 @@
-package component:rust-decoder;
+package component:decoder;
 
 interface host {
     log: func(message: string);

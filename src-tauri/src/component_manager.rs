@@ -1,54 +1,43 @@
 use crate::{AddedDecodersCount, DecoderPath};
-use wasmtime::*;
+use wasmtime::component::{*, Component as WasmtimeComponent};
+use wasmtime::{Engine, Store};
 
+bindgen!();
+
+struct LinkedState;
+
+impl component::decoder::host::Host for LinkedState {
+    fn log(&mut self, message: String) -> () {
+        println!("Decoder: {message}");
+    }
+}
+
+// FW.add_decoders(["../test_files/components/rust_decoder/rust_decoder.wasm"])
+// FW.add_decoders(["../test_files/components/javascript_decoder/javascript_decoder.wasm"])
+// FW.add_decoders(["../test_files/components/python_decoder/python_decoder.wasm"])
 pub fn add_decoders(decoder_paths: Vec<DecoderPath>) -> AddedDecodersCount {
     println!("decoders in Tauri: {decoder_paths:#?}");
+    println!("{:#?}", std::env::current_dir());
 
-    wasmtime_test().unwrap();
+    if let Err(error) = add_decoder(&decoder_paths[0]) {
+        eprintln!("add_decoders error: {error:?}");
+    }
 
     decoder_paths.len()
 }
 
-fn wasmtime_test() -> wasmtime::Result<()> {
+fn add_decoder(path: &str) -> wasmtime::Result<()> {
     let engine = Engine::default();
-
-    // Modules can be compiled through either the text or binary format
-    let wat = r#"
-        (module
-            (import "host" "host_func" (func $host_hello (param i32)))
-
-            (func (export "hello")
-                i32.const 3
-                call $host_hello)
-        )
-    "#;
-    let module = Module::new(&engine, wat)?;
-
-    // Host functionality can be arbitrary Rust functions and is provided
-    // to guests through a `Linker`.
+    let wasmtime_component = WasmtimeComponent::from_file(&engine, path)?;
+    
     let mut linker = Linker::new(&engine);
-    linker.func_wrap(
-        "host",
-        "host_func",
-        |caller: Caller<'_, u32>, param: i32| {
-            println!("Got {} from WebAssembly", param);
-            println!("my host state is: {}", caller.data());
-        },
-    )?;
+    Component::add_to_linker(&mut linker, |state: &mut LinkedState| state)?;
 
-    // All wasm objects operate within the context of a "store". Each
-    // `Store` has a type parameter to store host-specific data, which in
-    // this case we're using `4` for.
-    let mut store: Store<u32> = Store::new(&engine, 4);
+    let mut store = Store::new(&engine, LinkedState);
 
-    // Instantiation of a module requires specifying its imports and then
-    // afterwards we can fetch exports by name, as well as asserting the
-    // type signature of the function with `get_typed_func`.
-    let instance = linker.instantiate(&mut store, &module)?;
-    let hello = instance.get_typed_func::<(), ()>(&mut store, "hello")?;
+    let (component, _instance) = Component::instantiate(&mut store, &wasmtime_component, &linker)?; 
 
-    // And finally we can call the wasm!
-    hello.call(&mut store, ())?;
+    component.component_decoder_decoder().call_init(&mut store)?;
 
     Ok(())
 }
