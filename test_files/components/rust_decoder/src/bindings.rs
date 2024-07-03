@@ -3,7 +3,7 @@
 #[allow(dead_code)]
 pub mod component {
     #[allow(dead_code)]
-    pub mod rust_decoder {
+    pub mod decoder {
         #[allow(dead_code, clippy::all)]
         pub mod host {
             #[used]
@@ -19,7 +19,7 @@ pub mod component {
                     let len0 = vec0.len();
 
                     #[cfg(target_arch = "wasm32")]
-                    #[link(wasm_import_module = "component:rust-decoder/host")]
+                    #[link(wasm_import_module = "component:decoder/host")]
                     extern "C" {
                         #[link_name = "log"]
                         fn wit_import(_: *mut u8, _: usize);
@@ -40,7 +40,7 @@ pub mod exports {
     #[allow(dead_code)]
     pub mod component {
         #[allow(dead_code)]
-        pub mod rust_decoder {
+        pub mod decoder {
             #[allow(dead_code, clippy::all)]
             pub mod decoder {
                 #[used]
@@ -112,33 +112,33 @@ pub mod exports {
                 }
                 #[doc(hidden)]
 
-                macro_rules! __export_component_rust_decoder_decoder_cabi{
+                macro_rules! __export_component_decoder_decoder_cabi{
     ($ty:ident with_types_in $($path_to_types:tt)*) => (const _: () = {
 
-      #[export_name = "component:rust-decoder/decoder#init"]
+      #[export_name = "component:decoder/decoder#init"]
       unsafe extern "C" fn export_init() {
         $($path_to_types)*::_export_init_cabi::<$ty>()
       }
-      #[export_name = "component:rust-decoder/decoder#name"]
+      #[export_name = "component:decoder/decoder#name"]
       unsafe extern "C" fn export_name() -> *mut u8 {
         $($path_to_types)*::_export_name_cabi::<$ty>()
       }
-      #[export_name = "cabi_post_component:rust-decoder/decoder#name"]
+      #[export_name = "cabi_post_component:decoder/decoder#name"]
       unsafe extern "C" fn _post_return_name(arg0: *mut u8,) {
         $($path_to_types)*::__post_return_name::<$ty>(arg0)
       }
-      #[export_name = "component:rust-decoder/decoder#format-signal-value"]
+      #[export_name = "component:decoder/decoder#format-signal-value"]
       unsafe extern "C" fn export_format_signal_value(arg0: *mut u8,arg1: usize,) -> *mut u8 {
         $($path_to_types)*::_export_format_signal_value_cabi::<$ty>(arg0, arg1)
       }
-      #[export_name = "cabi_post_component:rust-decoder/decoder#format-signal-value"]
+      #[export_name = "cabi_post_component:decoder/decoder#format-signal-value"]
       unsafe extern "C" fn _post_return_format_signal_value(arg0: *mut u8,) {
         $($path_to_types)*::__post_return_format_signal_value::<$ty>(arg0)
       }
     };);
   }
                 #[doc(hidden)]
-                pub(crate) use __export_component_rust_decoder_decoder_cabi;
+                pub(crate) use __export_component_decoder_decoder_cabi;
                 #[repr(align(4))]
                 struct _RetArea([::core::mem::MaybeUninit<u8>; 8]);
                 static mut _RET_AREA: _RetArea = _RetArea([::core::mem::MaybeUninit::uninit(); 8]);
@@ -194,7 +194,7 @@ mod _rt {
 macro_rules! __export_component_impl {
   ($ty:ident) => (self::export!($ty with_types_in self););
   ($ty:ident with_types_in $($path_to_types_root:tt)*) => (
-  $($path_to_types_root)*::exports::component::rust_decoder::decoder::__export_component_rust_decoder_decoder_cabi!($ty with_types_in $($path_to_types_root)*::exports::component::rust_decoder::decoder);
+  $($path_to_types_root)*::exports::component::decoder::decoder::__export_component_decoder_decoder_cabi!($ty with_types_in $($path_to_types_root)*::exports::component::decoder::decoder);
   )
 }
 #[doc(inline)]
@@ -203,14 +203,14 @@ pub(crate) use __export_component_impl as export;
 #[cfg(target_arch = "wasm32")]
 #[link_section = "component-type:wit-bindgen:0.25.0:component:encoded world"]
 #[doc(hidden)]
-pub static __WIT_BINDGEN_COMPONENT_TYPE: [u8; 330] = *b"\
-\0asm\x0d\0\x01\0\0\x19\x16wit-component-encoding\x04\0\x07\xca\x01\x01A\x02\x01\
-A\x04\x01B\x02\x01@\x01\x07messages\x01\0\x04\0\x03log\x01\0\x03\x01\x1bcomponen\
-t:rust-decoder/host\x05\0\x01B\x06\x01@\0\x01\0\x04\0\x04init\x01\0\x01@\0\0s\x04\
-\0\x04name\x01\x01\x01@\x01\x05values\0s\x04\0\x13format-signal-value\x01\x02\x04\
-\x01\x1ecomponent:rust-decoder/decoder\x05\x01\x04\x01\x20component:rust-decoder\
-/component\x04\0\x0b\x0f\x01\0\x09component\x03\0\0\0G\x09producers\x01\x0cproce\
-ssed-by\x02\x0dwit-component\x070.208.1\x10wit-bindgen-rust\x060.25.0";
+pub static __WIT_BINDGEN_COMPONENT_TYPE: [u8; 315] = *b"\
+\0asm\x0d\0\x01\0\0\x19\x16wit-component-encoding\x04\0\x07\xbb\x01\x01A\x02\x01\
+A\x04\x01B\x02\x01@\x01\x07messages\x01\0\x04\0\x03log\x01\0\x03\x01\x16componen\
+t:decoder/host\x05\0\x01B\x06\x01@\0\x01\0\x04\0\x04init\x01\0\x01@\0\0s\x04\0\x04\
+name\x01\x01\x01@\x01\x05values\0s\x04\0\x13format-signal-value\x01\x02\x04\x01\x19\
+component:decoder/decoder\x05\x01\x04\x01\x1bcomponent:decoder/component\x04\0\x0b\
+\x0f\x01\0\x09component\x03\0\0\0G\x09producers\x01\x0cprocessed-by\x02\x0dwit-c\
+omponent\x070.208.1\x10wit-bindgen-rust\x060.25.0";
 
 #[inline(never)]
 #[doc(hidden)]

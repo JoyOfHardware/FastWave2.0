@@ -68,7 +68,7 @@ impl FW {
         Vec::new()
     }
 
-    /// JS: `FW.add_decoders(["test_files/components/rust_decoder/rust_decoder.wasm"])` -> `1`
+    /// JS: `FW.add_decoders(["../test_files/components/rust_decoder/rust_decoder.wasm"])` -> `1`
     pub async fn add_decoders(decoder_paths: Vec<DecoderPath>) -> AddedDecodersCount {
         platform::add_decoders(decoder_paths).await
     }
