@@ -1,4 +1,4 @@
-import { log } from "component:javascript-decoder/host"
+import { log } from "component:decoder/host"
 
 const name = "Javascript Test Decoder"
 

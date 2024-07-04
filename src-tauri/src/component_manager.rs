@@ -1,12 +1,21 @@
 use crate::{AddedDecodersCount, DecoderPath};
 use wasmtime::component::{*, Component as WasmtimeComponent};
 use wasmtime::{Engine, Store};
+use wasmtime_wasi::{WasiCtx, WasiView};
 
 bindgen!();
 
-struct LinkedState;
+struct State {
+    ctx: WasiCtx,
+    table: ResourceTable,
+}
 
-impl component::decoder::host::Host for LinkedState {
+impl WasiView for State {
+    fn ctx(&mut self) -> &mut WasiCtx { &mut self.ctx }
+    fn table(&mut self) -> &mut ResourceTable { &mut self.table }
+}
+
+impl component::decoder::host::Host for State {
     fn log(&mut self, message: String) -> () {
         println!("Decoder: {message}");
     }
@@ -18,22 +27,30 @@ impl component::decoder::host::Host for LinkedState {
 pub fn add_decoders(decoder_paths: Vec<DecoderPath>) -> AddedDecodersCount {
     println!("decoders in Tauri: {decoder_paths:#?}");
     println!("{:#?}", std::env::current_dir());
+    let decoder_paths_len = decoder_paths.len();
 
-    if let Err(error) = add_decoder(&decoder_paths[0]) {
-        eprintln!("add_decoders error: {error:?}");
-    }
+    std::thread::spawn(move || {
+        if let Err(error) = add_decoder(&decoder_paths[0]) {
+            eprintln!("add_decoders error: {error:?}");
+        }
+    }).join().unwrap();
 
-    decoder_paths.len()
+    decoder_paths_len
 }
 
 fn add_decoder(path: &str) -> wasmtime::Result<()> {
     let engine = Engine::default();
+
     let wasmtime_component = WasmtimeComponent::from_file(&engine, path)?;
     
     let mut linker = Linker::new(&engine);
-    Component::add_to_linker(&mut linker, |state: &mut LinkedState| state)?;
+    wasmtime_wasi::add_to_linker_sync(&mut linker)?;
+    Component::add_to_linker(&mut linker, |state: &mut State| state)?;
 
-    let mut store = Store::new(&engine, LinkedState);
+    let mut store = Store::new(&engine, State {
+        ctx: WasiCtx::builder().build(),
+        table: ResourceTable::new(),
+    });
 
     let (component, _instance) = Component::instantiate(&mut store, &wasmtime_component, &linker)?; 
 
