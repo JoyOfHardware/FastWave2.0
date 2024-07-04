@@ -24,3 +24,4 @@ tauri = { version = "=2.0.0-beta.22", features = ["macos-private-api", "linux-ip
 tauri-plugin-window-state = "=2.0.0-beta.9"
 tauri-plugin-dialog = "=2.0.0-beta.9"
 wasmtime = "22.0.0"
+wasmtime-wasi = "22.0.0"
