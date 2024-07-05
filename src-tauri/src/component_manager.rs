@@ -16,19 +16,23 @@ impl WasiView for State {
 }
 
 impl component::decoder::host::Host for State {
-    fn log(&mut self, message: String) -> () {
+    fn log(&mut self, message: String) {
         println!("Decoder: {message}");
     }
 }
 
+// @TODO Remove / improve comments below
+// Testing
 // FW.add_decoders(["../test_files/components/rust_decoder/rust_decoder.wasm"])
 // FW.add_decoders(["../test_files/components/javascript_decoder/javascript_decoder.wasm"])
 // FW.add_decoders(["../test_files/components/python_decoder/python_decoder.wasm"])
 pub fn add_decoders(decoder_paths: Vec<DecoderPath>) -> AddedDecodersCount {
     println!("decoders in Tauri: {decoder_paths:#?}");
-    println!("{:#?}", std::env::current_dir());
+    println!("Current dir: {:#?}", std::env::current_dir().unwrap());
     let decoder_paths_len = decoder_paths.len();
 
+    // New thread to prevent panics caused by running runtime in runtime
+    // @TODO replace with Tokio's spawn_blocking?
     std::thread::spawn(move || {
         if let Err(error) = add_decoder(&decoder_paths[0]) {
             eprintln!("add_decoders error: {error:?}");
@@ -52,8 +56,9 @@ fn add_decoder(path: &str) -> wasmtime::Result<()> {
         table: ResourceTable::new(),
     });
 
-    let (component, _instance) = Component::instantiate(&mut store, &wasmtime_component, &linker)?; 
+    let component = Component::instantiate(&mut store, &wasmtime_component, &linker)?; 
 
+    println!("Decoder name: {}", component.component_decoder_decoder().call_name(&mut store)?);
     component.component_decoder_decoder().call_init(&mut store)?;
 
     Ok(())
