@@ -1,7 +1,7 @@
 use shared::wellen_helpers;
 use std::sync::Mutex;
 use wellen::simple::Waveform;
-use zoon::{*, eprintln};
+use zoon::{eprintln, *};
 
 #[derive(Default)]
 struct BrowserPlatformStore {
