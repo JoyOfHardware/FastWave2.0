@@ -5,7 +5,9 @@ name = "Python Test Decoder"
 
 class Decoder(exports.Decoder):
     def init(self) -> None:
-        host.log(f"{name} initialized")
+        # @TODO it panics for some reasons 
+        # host.log(f"{name} initialized")
+        return None
 
     def name(self) -> str:
         return name

@@ -23,5 +23,9 @@ serde = { version = "1.0", features = ["derive"] }
 tauri = { version = "=2.0.0-beta.22", features = ["macos-private-api", "linux-ipc-protocol"] }
 tauri-plugin-window-state = "=2.0.0-beta.9"
 tauri-plugin-dialog = "=2.0.0-beta.9"
-wasmtime = "22.0.0"
-wasmtime-wasi = "22.0.0"
+
+# wasmtime = "22.0.0"
+# wasmtime-wasi = "22.0.0"
+# ~23.0.0
+wasmtime = { git = "https://github.com/bytecodealliance/wasmtime", rev = "842fa767acdc26f096ac108605353b8b71e23169" }
+wasmtime-wasi = { git = "https://github.com/bytecodealliance/wasmtime", rev = "842fa767acdc26f096ac108605353b8b71e23169" }
