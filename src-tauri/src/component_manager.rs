@@ -1,10 +1,10 @@
 use crate::{AddedDecodersCount, DecoderPath, RemovedDecodersCount};
+use once_cell::sync::Lazy;
+use std::sync::Arc;
+use tauri::async_runtime::Mutex;
 use wasmtime::component::{Component as WasmtimeComponent, *};
 use wasmtime::{AsContextMut, Engine, Store};
 use wasmtime_wasi::{WasiCtx, WasiView};
-use once_cell::sync::Lazy;
-use tauri::async_runtime::Mutex;
-use std::sync::Arc;
 
 bindgen!();
 
@@ -60,21 +60,24 @@ pub async fn remove_all_decoders() -> RemovedDecodersCount {
 // @TODO Remove / improve comments below
 // Testing
 // FW.add_decoders(["../test_files/components/rust_decoder/rust_decoder.wasm"])
+// FW.add_decoders(["../test_files/components/rust_decoder/rust_decoder.wasm", "../test_files/components/rust_decoder/rust_decoder.wasm"])
 // FW.add_decoders(["../test_files/components/javascript_decoder/javascript_decoder.wasm"])
 // FW.add_decoders(["../test_files/components/python_decoder/python_decoder.wasm"])
 pub async fn add_decoders(decoder_paths: Vec<DecoderPath>) -> AddedDecodersCount {
     println!("decoders in Tauri: {decoder_paths:#?}");
     println!("Current dir: {:#?}", std::env::current_dir().unwrap());
-    let decoder_paths_len = decoder_paths.len();
 
-    // New thread to prevent panics caused by running runtime in runtime
-    tauri::async_runtime::spawn_blocking(move || async move {
-        if let Err(error) = add_decoder(&decoder_paths[0]).await {
+    let mut added_decoders_count = 0;
+
+    for decoder_path in decoder_paths {
+        if let Err(error) = add_decoder(&decoder_path).await {
             eprintln!("add_decoders error: {error:?}");
+        } else {
+            added_decoders_count += 1;
         }
-    }).await.unwrap().await;
+    }
 
-    decoder_paths_len
+    added_decoders_count
 }
 
 async fn add_decoder(path: &str) -> wasmtime::Result<()> {
