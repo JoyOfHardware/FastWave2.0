@@ -1,4 +1,4 @@
-use crate::{AddedDecodersCount, DecoderPath};
+use crate::{AddedDecodersCount, DecoderPath, RemovedDecodersCount};
 use wasmtime::component::{Component as WasmtimeComponent, *};
 use wasmtime::{Engine, Store};
 use wasmtime_wasi::{WasiCtx, WasiView};
@@ -23,6 +23,10 @@ impl component::decoder::host::Host for State {
     fn log(&mut self, message: String) {
         println!("Decoder: {message}");
     }
+}
+
+pub fn remove_all_decoders() -> RemovedDecodersCount {
+    156
 }
 
 // @TODO Make println work on Windows?

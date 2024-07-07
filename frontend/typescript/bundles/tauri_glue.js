@@ -2539,12 +2539,16 @@ async function unload_signal(signal_ref_index) {
 async function add_decoders(decoder_paths) {
   return await invoke2("add_decoders", { decoder_paths });
 }
+async function remove_all_decoders() {
+  return await invoke2("remove_all_decoders");
+}
 export {
   add_decoders,
   get_hierarchy,
   load_file_with_selected_vars,
   load_signal_and_get_timeline,
   pick_and_load_waveform,
+  remove_all_decoders,
   show_window,
   unload_signal
 };

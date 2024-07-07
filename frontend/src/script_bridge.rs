@@ -4,6 +4,7 @@ use zoon::*;
 
 type FullVarName = String;
 type AddedDecodersCount = usize;
+type RemovedDecodersCount = usize;
 type DecoderPath = String;
 
 #[wasm_bindgen(module = "/typescript/bundles/strict_eval.js")]
@@ -71,5 +72,10 @@ impl FW {
     /// JS: `FW.add_decoders(["../test_files/components/rust_decoder/rust_decoder.wasm"])` -> `1`
     pub async fn add_decoders(decoder_paths: Vec<DecoderPath>) -> AddedDecodersCount {
         platform::add_decoders(decoder_paths).await
+    }
+
+    /// JS: `FW.remove_all_decoders()` -> `5`
+    pub async fn remove_all_decoders() -> RemovedDecodersCount {
+        platform::remove_all_decoders().await
     }
 }

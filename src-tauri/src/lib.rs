@@ -6,6 +6,7 @@ use wellen::simple::Waveform;
 type Filename = String;
 type JavascriptCode = String;
 type AddedDecodersCount = usize;
+type RemovedDecodersCount = usize;
 type DecoderPath = String;
 
 mod component_manager;
@@ -100,6 +101,11 @@ async fn add_decoders(decoder_paths: Vec<DecoderPath>) -> Result<AddedDecodersCo
     Ok(component_manager::add_decoders(decoder_paths))
 }
 
+#[tauri::command(rename_all = "snake_case")]
+async fn remove_all_decoders() -> Result<RemovedDecodersCount, ()> {
+    Ok(component_manager::remove_all_decoders())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     // https://github.com/tauri-apps/tauri/issues/8462
@@ -119,6 +125,7 @@ pub fn run() {
             load_signal_and_get_timeline,
             unload_signal,
             add_decoders,
+            remove_all_decoders,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
