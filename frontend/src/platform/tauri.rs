@@ -63,6 +63,11 @@ pub(super) async fn add_decoders(
         .unwrap_throw()
 }
 
+pub(super) async fn remove_all_decoders() -> super::RemovedDecodersCount {
+    serde_wasm_bindgen::from_value(tauri_glue::remove_all_decoders().await.unwrap_throw())
+        .unwrap_throw()
+}
+
 mod tauri_glue {
     use zoon::*;
 
@@ -98,5 +103,8 @@ mod tauri_glue {
         pub async fn add_decoders(
             decoder_paths: Vec<super::super::DecoderPath>,
         ) -> Result<JsValue, JsValue>;
+
+        #[wasm_bindgen(catch)]
+        pub async fn remove_all_decoders() -> Result<JsValue, JsValue>;
     }
 }

@@ -128,3 +128,9 @@ pub(super) async fn add_decoders(
     eprintln!("Adding decoders is not supported in the browser.");
     0
 }
+
+pub(super) async fn remove_all_decoders() -> super::RemovedDecodersCount {
+    // @TODO error message for user
+    eprintln!("Removing decoders is not supported in the browser.");
+    0
+}

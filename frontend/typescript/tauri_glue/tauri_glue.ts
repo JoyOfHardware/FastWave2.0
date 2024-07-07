@@ -10,6 +10,7 @@ type WellenHierarchy = unknown;
 type Timeline = unknown;
 type VarFormat = unknown;
 type AddedDecodersCount = number;
+type RemovedDecodersCount = number;
 type DecoderPath = string;
 
 export async function show_window(): Promise<void> {
@@ -52,4 +53,8 @@ export async function unload_signal(signal_ref_index: number): Promise<void> {
 
 export async function add_decoders(decoder_paths: Array<DecoderPath>): Promise<AddedDecodersCount> {
     return await invoke("add_decoders", { decoder_paths });
+}
+
+export async function remove_all_decoders(): Promise<RemovedDecodersCount> {
+    return await invoke("remove_all_decoders");
 }
