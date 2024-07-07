@@ -98,12 +98,12 @@ async fn unload_signal(signal_ref_index: usize, store: tauri::State<'_, Store>) 
 
 #[tauri::command(rename_all = "snake_case")]
 async fn add_decoders(decoder_paths: Vec<DecoderPath>) -> Result<AddedDecodersCount, ()> {
-    Ok(component_manager::add_decoders(decoder_paths))
+    Ok(component_manager::add_decoders(decoder_paths).await)
 }
 
 #[tauri::command(rename_all = "snake_case")]
 async fn remove_all_decoders() -> Result<RemovedDecodersCount, ()> {
-    Ok(component_manager::remove_all_decoders())
+    Ok(component_manager::remove_all_decoders().await)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
