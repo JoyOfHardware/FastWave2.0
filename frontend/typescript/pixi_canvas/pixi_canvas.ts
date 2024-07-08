@@ -199,6 +199,10 @@ export class PixiController {
     clear_vars() {
         this.var_signal_rows.slice().reverse().forEach(row => row.destroy());
     }
+
+    request_timeline_redraw() {
+        
+    }
 }
 
 class VarSignalRow {

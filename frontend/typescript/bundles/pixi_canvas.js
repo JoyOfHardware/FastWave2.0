@@ -35265,6 +35265,8 @@ var PixiController = class {
   clear_vars() {
     this.var_signal_rows.slice().reverse().forEach((row) => row.destroy());
   }
+  request_timeline_redraw() {
+  }
 };
 var VarSignalRow = class {
   signal_ref_index;

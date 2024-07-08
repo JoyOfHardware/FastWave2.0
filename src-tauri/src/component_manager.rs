@@ -59,10 +59,25 @@ pub async fn remove_all_decoders() -> RemovedDecodersCount {
 
 // @TODO Remove / improve comments below
 // Testing
+//
+// Rust
 // FW.add_decoders(["../test_files/components/rust_decoder/rust_decoder.wasm"])
 // FW.add_decoders(["../test_files/components/rust_decoder/rust_decoder.wasm", "../test_files/components/rust_decoder/rust_decoder.wasm"])
+//
+// JS
 // FW.add_decoders(["../test_files/components/javascript_decoder/javascript_decoder.wasm"])
+//
+// Python
 // FW.add_decoders(["../test_files/components/python_decoder/python_decoder.wasm"])
+//
+// Remove all
+// FW.remove_all_decoders()
+//
+// All Debug
+// FW.add_decoders(["../test_files/components/rust_decoder/rust_decoder.wasm", "../test_files/components/javascript_decoder/javascript_decoder.wasm", "../test_files/components/python_decoder/python_decoder.wasm"])
+//
+// All Release
+// FW.add_decoders(["../../test_files/components/rust_decoder/rust_decoder.wasm", "../../test_files/components/javascript_decoder/javascript_decoder.wasm", "../../test_files/components/python_decoder/python_decoder.wasm"])
 pub async fn add_decoders(decoder_paths: Vec<DecoderPath>) -> AddedDecodersCount {
     println!("decoders in Tauri: {decoder_paths:#?}");
     println!("Current dir: {:#?}", std::env::current_dir().unwrap());

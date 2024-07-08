@@ -3,6 +3,8 @@
 
 // NOTE: `FASTWAVE_PLATFORM` is set in `Makefile.toml` tasks and then in `build.rs`
 
+use crate::STORE;
+
 #[cfg(FASTWAVE_PLATFORM = "TAURI")]
 mod tauri;
 #[cfg(FASTWAVE_PLATFORM = "TAURI")]
@@ -63,9 +65,23 @@ pub async fn unload_signal(signal_ref: wellen::SignalRef) {
 }
 
 pub async fn add_decoders(decoder_paths: Vec<DecoderPath>) -> AddedDecodersCount {
-    platform::add_decoders(decoder_paths).await
+    let count = platform::add_decoders(decoder_paths).await;
+    if count > 0 {
+        redraw_all_timeline_rows().await;
+    }
+    count
 }
 
 pub async fn remove_all_decoders() -> RemovedDecodersCount {
-    platform::remove_all_decoders().await
+    let count = platform::remove_all_decoders().await;
+    if count > 0 {
+        redraw_all_timeline_rows().await;
+    }
+    count
+}
+
+async fn redraw_all_timeline_rows() {
+    if let Some(controller) = STORE.canvas_controller.get_cloned().get_cloned() {
+        controller.redraw_all_rows().await
+    }
 }
