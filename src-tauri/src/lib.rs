@@ -87,15 +87,27 @@ async fn load_signal_and_get_timeline(
         var_format,
         |mut value: String| {
             Box::pin(async {
-                let decoders = component_manager::DECODERS.read().await;
-                let mut store_lock = component_manager::STORE.lock().await;
-                let mut store = store_lock.as_context_mut();
-                for decoder in decoders.iter() {
-                    value = decoder
-                        .component_decoder_decoder()
-                        .call_format_signal_value(&mut store, &value)
-                        .unwrap()
-                }
+                // We need to spawn a (non-runtime-specific?) blocking task before calling component methods to prevent this error:
+                // "Cannot start a runtime from within a runtime. This happens because a function (like `block_on`) attempted to block the current thread while the thread is being used to drive asynchronous tasks."
+                // @TODO Workaround? Is it a problem only for non-Rust components? Is it needed only when there is a problem in the component (e.g. "`Err` value: wasm trap: cannot enter component instance"?)
+                // let value = std::thread::spawn(move || {
+                    // futures::executor::block_on(async move {
+                        let decoders = component_manager::DECODERS.read().await;
+                        let mut store_lock = component_manager::STORE.lock().await;
+                        let mut store = store_lock.as_context_mut();
+
+                        for decoder in decoders.iter() {
+                            value = decoder
+                                .component_decoder_decoder()
+                                .call_format_signal_value(&mut store, &value)
+                                // @TODO Resolve panic when running non-Rust components:
+                                // `Err` value: wasm trap: cannot enter component instance
+                                // https://github.com/bytecodealliance/wasmtime/issues/8670 ?
+                                .unwrap()
+                        }
+                        // value
+                    // })
+                // }).join().unwrap();
                 value
             })
         },

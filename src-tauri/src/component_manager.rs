@@ -79,7 +79,7 @@ pub async fn remove_all_decoders() -> RemovedDecodersCount {
 // All Release
 // FW.add_decoders(["../../test_files/components/rust_decoder/rust_decoder.wasm", "../../test_files/components/javascript_decoder/javascript_decoder.wasm", "../../test_files/components/python_decoder/python_decoder.wasm"])
 pub async fn add_decoders(decoder_paths: Vec<DecoderPath>) -> AddedDecodersCount {
-    println!("decoders in Tauri: {decoder_paths:#?}");
+    println!("Decoders: {decoder_paths:#?}");
     println!("Current dir: {:#?}", std::env::current_dir().unwrap());
 
     let mut added_decoders_count = 0;
