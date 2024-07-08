@@ -111,7 +111,9 @@ pub(super) async fn load_signal_and_get_timeline(
         timeline_viewport_x,
         block_height,
         var_format,
-    );
+        |value| Box::pin(async { value }),
+    )
+    .await;
     timeline
 }
 

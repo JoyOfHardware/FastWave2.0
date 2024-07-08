@@ -1,14 +1,14 @@
 use crate::{AddedDecodersCount, DecoderPath, RemovedDecodersCount};
 use once_cell::sync::Lazy;
 use std::sync::Arc;
-use tauri::async_runtime::Mutex;
+use tauri::async_runtime::{Mutex, RwLock};
 use wasmtime::component::{Component as WasmtimeComponent, *};
 use wasmtime::{AsContextMut, Engine, Store};
 use wasmtime_wasi::{WasiCtx, WasiView};
 
 bindgen!();
 
-static DECODERS: Lazy<Arc<Mutex<Vec<Component>>>> = Lazy::new(<_>::default);
+pub static DECODERS: Lazy<Arc<RwLock<Vec<Component>>>> = Lazy::new(<_>::default);
 static ENGINE: Lazy<Engine> = Lazy::new(<_>::default);
 static LINKER: Lazy<Linker<State>> = Lazy::new(|| {
     let mut linker = Linker::new(&ENGINE);
@@ -16,7 +16,7 @@ static LINKER: Lazy<Linker<State>> = Lazy::new(|| {
     Component::add_to_linker(&mut linker, |state: &mut State| state).unwrap();
     linker
 });
-static STORE: Lazy<Arc<Mutex<Store<State>>>> = Lazy::new(|| {
+pub static STORE: Lazy<Arc<Mutex<Store<State>>>> = Lazy::new(|| {
     let store = Store::new(
         &ENGINE,
         State {
@@ -27,7 +27,7 @@ static STORE: Lazy<Arc<Mutex<Store<State>>>> = Lazy::new(|| {
     Arc::new(Mutex::new(store))
 });
 
-struct State {
+pub struct State {
     ctx: WasiCtx,
     table: ResourceTable,
 }
@@ -48,7 +48,7 @@ impl component::decoder::host::Host for State {
 }
 
 pub async fn remove_all_decoders() -> RemovedDecodersCount {
-    let mut decoders = DECODERS.lock().await;
+    let mut decoders = DECODERS.write().await;
     let decoders_count = decoders.len();
     decoders.clear();
     decoders_count
@@ -98,7 +98,7 @@ async fn add_decoder(path: &str) -> wasmtime::Result<()> {
         .component_decoder_decoder()
         .call_init(&mut store)?;
 
-    DECODERS.lock().await.push(component);
+    DECODERS.write().await.push(component);
 
     Ok(())
 }

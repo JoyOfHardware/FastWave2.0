@@ -1,13 +1,25 @@
 use crate::*;
+use future::BoxFuture;
+use wellen::SignalValue;
 
-pub fn signal_to_timeline(
-    signal: &wellen::Signal,
+// @TODO remove once https://github.com/rust-lang/rust/issues/89976 is resolved
+// (`error: implementation of `FnOnce` is not general enough`)
+fn type_hint<F>(f: F) -> F
+where
+    F: for<'a> FnMut((u32, SignalValue<'a>)) -> (f64, SignalValue<'a>),
+{
+    f
+}
+
+pub async fn signal_to_timeline<'s>(
+    signal: &'s wellen::Signal,
     time_table: &[wellen::Time],
     timeline_zoom: f64,
     timeline_viewport_width: u32,
     timeline_viewport_x: i32,
     block_height: u32,
     var_format: VarFormat,
+    mut format_by_decoders: impl FnMut(String) -> BoxFuture<'s, String>,
 ) -> Timeline {
     const MIN_BLOCK_WIDTH: u32 = 3;
     // Courier New, 16px, sync with `label_style` in `pixi_canvas.rs`
@@ -25,12 +37,12 @@ pub fn signal_to_timeline(
 
     let mut x_value_pairs = signal
         .iter_changes()
-        .map(|(index, value)| {
+        .map(type_hint(move |(index, value)| {
             let index = index as usize;
             let time = time_table[index] as f64;
             let x = time / last_time * timeline_width - timeline_viewport_x;
             (x, value)
-        })
+        }))
         .peekable();
 
     // @TODO parallelize?
@@ -55,7 +67,8 @@ pub fn signal_to_timeline(
         }
 
         // @TODO cache?
-        let value = var_format.format(value);
+        let mut value = var_format.format(value);
+        value = format_by_decoders(value).await;
 
         let value_width = (value.chars().count() as f64 * LETTER_WIDTH) as u32;
         // @TODO Ellipsis instead of hiding?

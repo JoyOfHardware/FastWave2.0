@@ -1,6 +1,7 @@
 use std::fs;
-use std::sync::Mutex;
+use tauri::async_runtime::RwLock;
 use tauri_plugin_dialog::DialogExt;
+use wasmtime::AsContextMut;
 use wellen::simple::Waveform;
 
 type Filename = String;
@@ -13,7 +14,7 @@ mod component_manager;
 
 #[derive(Default)]
 struct Store {
-    waveform: Mutex<Option<Waveform>>,
+    waveform: RwLock<Option<Waveform>>,
 }
 
 #[tauri::command(rename_all = "snake_case")]
@@ -35,7 +36,7 @@ async fn pick_and_load_waveform(
     let Ok(waveform) = waveform else {
         panic!("Waveform file reading failed")
     };
-    *store.waveform.lock().unwrap() = Some(waveform);
+    *store.waveform.write().await = Some(waveform);
     Ok(Some(file_response.name.unwrap()))
 }
 
@@ -53,8 +54,9 @@ async fn load_file_with_selected_vars(app: tauri::AppHandle) -> Result<Option<Ja
 
 #[tauri::command(rename_all = "snake_case")]
 async fn get_hierarchy(store: tauri::State<'_, Store>) -> Result<serde_json::Value, ()> {
-    let waveform = store.waveform.lock().unwrap();
-    let hierarchy = waveform.as_ref().unwrap().hierarchy();
+    let waveform_lock = store.waveform.read().await;
+    let waveform = waveform_lock.as_ref().unwrap();
+    let hierarchy = waveform.hierarchy();
     Ok(serde_json::to_value(hierarchy).unwrap())
 }
 
@@ -70,7 +72,7 @@ async fn load_signal_and_get_timeline(
 ) -> Result<serde_json::Value, ()> {
     // @TODO run (all?) in a blocking thread?
     let signal_ref = wellen::SignalRef::from_index(signal_ref_index).unwrap();
-    let mut waveform_lock = store.waveform.lock().unwrap();
+    let mut waveform_lock = store.waveform.write().await;
     let waveform = waveform_lock.as_mut().unwrap();
     waveform.load_signals_multi_threaded(&[signal_ref]);
     let signal = waveform.get_signal(signal_ref).unwrap();
@@ -83,14 +85,29 @@ async fn load_signal_and_get_timeline(
         timeline_viewport_x,
         block_height,
         var_format,
-    );
+        |mut value: String| {
+            Box::pin(async {
+                let decoders = component_manager::DECODERS.read().await;
+                let mut store_lock = component_manager::STORE.lock().await;
+                let mut store = store_lock.as_context_mut();
+                for decoder in decoders.iter() {
+                    value = decoder
+                        .component_decoder_decoder()
+                        .call_format_signal_value(&mut store, &value)
+                        .unwrap()
+                }
+                value
+            })
+        },
+    )
+    .await;
     Ok(serde_json::to_value(timeline).unwrap())
 }
 
 #[tauri::command(rename_all = "snake_case")]
 async fn unload_signal(signal_ref_index: usize, store: tauri::State<'_, Store>) -> Result<(), ()> {
     let signal_ref = wellen::SignalRef::from_index(signal_ref_index).unwrap();
-    let mut waveform_lock = store.waveform.lock().unwrap();
+    let mut waveform_lock = store.waveform.write().await;
     let waveform = waveform_lock.as_mut().unwrap();
     waveform.unload_signals(&[signal_ref]);
     Ok(())
