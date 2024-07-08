@@ -4,7 +4,8 @@ use wellen::GetItem;
 use zoon::*;
 
 mod pixi_canvas;
-use pixi_canvas::{PixiCanvas, PixiController};
+use pixi_canvas::PixiCanvas;
+pub use pixi_canvas::PixiController;
 
 const ROW_HEIGHT: u32 = 40;
 const ROW_GAP: u32 = 4;
@@ -14,7 +15,7 @@ pub struct WaveformPanel {
     selected_var_refs: MutableVec<wellen::VarRef>,
     hierarchy: Mutable<Option<Arc<wellen::Hierarchy>>>,
     loaded_filename: Mutable<Option<Filename>>,
-    canvas_controller: Mutable<ReadOnlyMutable<Option<PixiController>>>,
+    canvas_controller: Mutable<Mutable<Option<SendWrapper<PixiController>>>>,
 }
 
 impl WaveformPanel {
@@ -22,12 +23,13 @@ impl WaveformPanel {
         hierarchy: Mutable<Option<Arc<wellen::Hierarchy>>>,
         selected_var_refs: MutableVec<wellen::VarRef>,
         loaded_filename: Mutable<Option<Filename>>,
+        canvas_controller: Mutable<Mutable<Option<SendWrapper<PixiController>>>>,
     ) -> impl Element {
         Self {
             selected_var_refs,
             hierarchy,
             loaded_filename,
-            canvas_controller: Mutable::new(Mutable::default().read_only()),
+            canvas_controller,
         }
         .root()
     }

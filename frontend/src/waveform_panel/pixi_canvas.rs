@@ -5,7 +5,7 @@ use zoon::*;
 
 pub struct PixiCanvas {
     raw_el: RawHtmlEl<web_sys::HtmlElement>,
-    controller: ReadOnlyMutable<Option<js_bridge::PixiController>>,
+    controller: Mutable<Option<SendWrapper<js_bridge::PixiController>>>,
     #[allow(dead_code)]
     width: ReadOnlyMutable<u32>,
     #[allow(dead_code)]
@@ -32,7 +32,8 @@ impl HasIds for PixiCanvas {}
 
 impl PixiCanvas {
     pub fn new(row_height: u32, row_gap: u32) -> Self {
-        let controller: Mutable<Option<js_bridge::PixiController>> = Mutable::new(None);
+        let controller: Mutable<Option<SendWrapper<js_bridge::PixiController>>> =
+            Mutable::new(None);
         let width = Mutable::new(0);
         let height = Mutable::new(0);
         let resize_task = Task::start_droppable(
@@ -77,7 +78,7 @@ impl PixiCanvas {
         ));
         // -- // --
         Self {
-            controller: controller.read_only(),
+            controller: controller.clone(),
             width: width.read_only(),
             height: height.read_only(),
             task_with_controller: task_with_controller.clone(),
@@ -105,14 +106,14 @@ impl PixiCanvas {
                 })
                 .after_insert(clone!((controller, timeline_getter) move |element| {
                     Task::start(async move {
-                        let pixi_controller = js_bridge::PixiController::new(
+                        let pixi_controller = SendWrapper::new(js_bridge::PixiController::new(
                             1.,
                             width.get(),
                             0,
                             row_height,
                             row_gap,
                             &timeline_getter
-                        );
+                        ));
                         pixi_controller.init(&element).await;
                         controller.set(Some(pixi_controller));
                     });
@@ -131,7 +132,7 @@ impl PixiCanvas {
 
     pub fn task_with_controller<FUT: Future<Output = ()> + 'static>(
         self,
-        f: impl FnOnce(ReadOnlyMutable<Option<js_bridge::PixiController>>) -> FUT,
+        f: impl FnOnce(Mutable<Option<SendWrapper<js_bridge::PixiController>>>) -> FUT,
     ) -> Self {
         self.task_with_controller
             .set(Some(Task::start_droppable(f(self.controller.clone()))));
@@ -186,6 +187,8 @@ mod js_bridge {
         #[wasm_bindgen(method)]
         pub fn destroy(this: &PixiController);
 
+        // -- FastWave-specific --
+
         #[wasm_bindgen(method)]
         pub fn get_timeline_zoom(this: &PixiController) -> f64;
 
@@ -194,8 +197,6 @@ mod js_bridge {
 
         #[wasm_bindgen(method)]
         pub fn get_timeline_viewport_x(this: &PixiController) -> i32;
-
-        // -- FastWave-specific --
 
         #[wasm_bindgen(method)]
         pub fn set_var_format(this: &PixiController, index: usize, var_format: JsValue);
@@ -224,5 +225,8 @@ mod js_bridge {
 
         #[wasm_bindgen(method)]
         pub fn clear_vars(this: &PixiController);
+
+        #[wasm_bindgen(method)]
+        pub async fn redraw_all_rows(this: &PixiController);
     }
 }
