@@ -10,7 +10,7 @@ export const decoder = {
         return name
     },
     formatSignalValue(value) {
-        value + "!"
+        return value + "!"
     }
 }
 
