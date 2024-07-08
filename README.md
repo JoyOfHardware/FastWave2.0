@@ -3,34 +3,44 @@
 
 ---
 
+<p align="center">Browser (Firefox)</p>
 <p align="center">
   <img width="800" src="docs/screenshot_firefox.png" alt="Fastwave - Browser (Firefox)" />
-  Browser (Firefox)
 </p>
 
+<p align="center">Desktop, miller columns and tree</p>
 <p align="center">
   <img width="800" src="docs/video_desktop.gif" alt="Fastwave - Desktop, miller columns and tree" />
-  Desktop, miller columns and tree 
 </p>
 
+<p align="center">Zoom, pan and basic number formats</p>
 <p align="center">
   <img width="800" src="docs/video_zoom_formatting_simple.gif" alt="Fastwave - Zoom, pan and basic number formats" />
-  Zoom, pan and basic number formats 
 </p>
 
+<p align="center">Zoom and all formats</p>
 <p align="center">
   <img width="800" src="docs/video_zoom_formatting.gif" alt="Fastwave - Zoom and all formats" />
-  Zoom and all formats 
 </p>
 
+<p align="center">Javascript commands</p>
 <p align="center">
   <img width="800" src="docs/video_javascript_commands.gif" alt="Fastwave - Javascript commands" />
-  Javascript commands 
 </p>
 
+<p align="center">Load and save selected variables</p>
 <p align="center">
   <img width="800" src="docs/video_load_save_selected_vars.gif" alt="Fastwave - Load and save selected variables" />
-  Load and save selected variables 
+</p>
+
+<p align="center">Decoders Demo</p> 
+<p align="center">
+  <img width="800" src="docs/video_decoders.gif" alt="Fastwave - Decoders demo" />
+</p>
+
+<p align="center">Decoder Interface</p>
+<p align="center">
+  <img width="500" src="docs/screenshot_world_wit.png" alt="Fastwave - Decoder Interface" />
 </p>
 
 ---
