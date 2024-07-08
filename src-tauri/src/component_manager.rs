@@ -84,6 +84,10 @@ pub async fn add_decoders(decoder_paths: Vec<DecoderPath>) -> AddedDecodersCount
 
     let mut added_decoders_count = 0;
 
+    // @TODO (?) New thread to prevent "Cannot start a runtime from within a runtime."
+    // when a call to a component fails / panics
+    // std::thread::spawn(move || {
+    // futures::executor::block_on(async move {
     for decoder_path in decoder_paths {
         if let Err(error) = add_decoder(&decoder_path).await {
             eprintln!("add_decoders error: {error:?}");
@@ -91,6 +95,8 @@ pub async fn add_decoders(decoder_paths: Vec<DecoderPath>) -> AddedDecodersCount
             added_decoders_count += 1;
         }
     }
+    // })
+    // }).join().unwrap();
 
     added_decoders_count
 }
