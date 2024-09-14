@@ -1,4 +1,4 @@
-use crate::{platform, script_bridge, Filename, Layout, theme::*};
+use crate::{platform, script_bridge, theme::*, Filename, Layout};
 use std::sync::Arc;
 use zoon::*;
 
@@ -85,8 +85,7 @@ impl HeaderPanel {
                 Label::new()
                     .s(Padding::new().x(20).y(10))
                     .s(Background::new().color_signal(
-                        hovered_signal
-                            .map_bool(|| COLOR_MEDIUM_SLATE_BLUE, || COLOR_SLATE_BLUE),
+                        hovered_signal.map_bool(|| COLOR_MEDIUM_SLATE_BLUE, || COLOR_SLATE_BLUE),
                     ))
                     .s(Align::new().left())
                     .s(RoundedCorners::all(15))
@@ -226,9 +225,7 @@ impl HeaderPanel {
                     .attr("spellcheck", "false")
                     .style("resize", "vertical")
             })
-            .placeholder(
-                Placeholder::new("FW.say_hello()").s(Font::new().color(COLOR_LIGHT_BLUE)),
-            )
+            .placeholder(Placeholder::new("FW.say_hello()").s(Font::new().color(COLOR_LIGHT_BLUE)))
             .label_hidden("command editor panel")
             .text_signal(script_signal)
             .on_change(clone!((script, command_result) move |text| {
