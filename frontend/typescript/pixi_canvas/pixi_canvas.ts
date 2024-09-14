@@ -1,5 +1,17 @@
 import { Application, Text, Graphics, Container, TextStyle, Sprite, Texture } from "pixi.js";
 
+// const color_dark_slate_blue = 'DarkSlateBlue'
+const color_dark_slate_blue = '#24478e'  // oklch(41.43% 0.125 262.26)'
+
+// const color_white = 'White'
+const color_white = '#ffffff'   // oklch(100% 3.5594404384177905e-8 105.88)
+
+// const color_slate_blue = 'SlateBlue'
+const color_slate_blue = '#3d7af3'  // oklch(60.45% 0.194 262.26)
+
+// const color_dark_violet_with_x = '0x550099'   // oklch(37.6% 0.201 299.56)
+const color_dark_violet_with_x = '0x002ca9'   // oklch(37.6% 0.201 263.53)
+
 // @TODO sync with Rust and `tauri_glue.ts`
 type Timeline = {
     blocks: Array<TimelineBlock>
@@ -69,7 +81,7 @@ export class PixiController {
     }
 
     async init(parent_element: HTMLElement) {
-        await this.app.init({ background: 'DarkSlateBlue', antialias: true, resizeTo: parent_element });
+        await this.app.init({ background: color_dark_slate_blue, antialias: true, resizeTo: parent_element });
         parent_element.appendChild(this.app.canvas);
     }
 
@@ -221,7 +233,7 @@ class VarSignalRow {
     signal_blocks_container = new Container();
     label_style = new TextStyle({
         align: "center",
-        fill: "White",
+        fill: color_white,
         fontSize: 16,
         fontFamily: '"Courier New", monospace',
     });    
@@ -258,7 +270,7 @@ class VarSignalRow {
         // row background
         this.row_container_background = new Sprite();
         this.row_container_background.texture = Texture.WHITE;
-        this.row_container_background.tint = '0x550099';
+        this.row_container_background.tint = color_dark_violet_with_x;
         this.row_container_background.height = this.row_height;
         this.row_container.addChild(this.row_container_background);
 
@@ -300,7 +312,7 @@ class VarSignalRow {
             const gap_between_blocks = 2;
             const background = new Graphics()
                 .rect(gap_between_blocks / 2, 0, timeline_block.width - gap_between_blocks, timeline_block.height)
-                .fill('SlateBlue');
+                .fill(color_slate_blue);
             signal_block.addChild(background);
 
             // label

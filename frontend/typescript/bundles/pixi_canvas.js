@@ -35128,6 +35128,10 @@ var import_earcut2 = __toESM(require_earcut(), 1);
 extensions.add(browserExt, webworkerExt);
 
 // pixi_canvas.ts
+var color_dark_slate_blue = "#24478e";
+var color_white = "#ffffff";
+var color_slate_blue = "#3d7af3";
+var color_dark_violet_with_x = "0x002ca9";
 var PixiController = class {
   app;
   // -- FastWave-specific --
@@ -35151,7 +35155,7 @@ var PixiController = class {
     this.timeline_getter = timeline_getter;
   }
   async init(parent_element) {
-    await this.app.init({ background: "DarkSlateBlue", antialias: true, resizeTo: parent_element });
+    await this.app.init({ background: color_dark_slate_blue, antialias: true, resizeTo: parent_element });
     parent_element.appendChild(this.app.canvas);
   }
   // Default automatic Pixi resizing according to the parent is not reliable 
@@ -35284,7 +35288,7 @@ var VarSignalRow = class {
   signal_blocks_container = new Container();
   label_style = new TextStyle({
     align: "center",
-    fill: "White",
+    fill: color_white,
     fontSize: 16,
     fontFamily: '"Courier New", monospace'
   });
@@ -35304,7 +35308,7 @@ var VarSignalRow = class {
     this.rows_container.addChild(this.row_container);
     this.row_container_background = new Sprite();
     this.row_container_background.texture = Texture.WHITE;
-    this.row_container_background.tint = "0x550099";
+    this.row_container_background.tint = color_dark_violet_with_x;
     this.row_container_background.height = this.row_height;
     this.row_container.addChild(this.row_container_background);
     this.row_container.addChild(this.signal_blocks_container);
@@ -35330,7 +35334,7 @@ var VarSignalRow = class {
       signal_block.x = timeline_block.x;
       this.signal_blocks_container.addChild(signal_block);
       const gap_between_blocks = 2;
-      const background = new Graphics().rect(gap_between_blocks / 2, 0, timeline_block.width - gap_between_blocks, timeline_block.height).fill("SlateBlue");
+      const background = new Graphics().rect(gap_between_blocks / 2, 0, timeline_block.width - gap_between_blocks, timeline_block.height).fill(color_slate_blue);
       signal_block.addChild(background);
       if (timeline_block.label !== void 0) {
         const label = new Text();
