@@ -1,3 +1,4 @@
 html {
-    background-color: DarkSlateBlue;
+    /* background-color: DarkSlateBlue; */
+    background-color: oklch(41.43% 0.125 262.26);
 }
