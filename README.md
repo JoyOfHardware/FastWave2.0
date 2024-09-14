@@ -3,6 +3,27 @@
 
 ---
 
+<p align="center">Default state - Dark (new design)</p>
+<p align="center">
+  <img width="800" src="docs/home_dark.png" alt="Fastwave - Default state - Dark (not implemented yet)" />
+</p>
+
+<p align="center">Loaded files - Dark (new design)</p>
+<p align="center">
+  <img width="800" src="docs/loaded_files_dark.png" alt="Fastwave - Loaded files - Dark (not implemented yet)" />
+</p>
+
+<p align="center">Default state - Light (new design)</p>
+<p align="center">
+  <img width="800" src="docs/home_light.png" alt="Fastwave - Default state - Light (not implemented yet)" />
+</p>
+
+<p align="center">Loaded files - Light (new design)</p>
+<p align="center">
+  <img width="800" src="docs/loaded_files_light.png" alt="Fastwave - Loaded files - Light (not implemented yet)" />
+</p>
+
+
 <p align="center">Browser (Firefox)</p>
 <p align="center">
   <img width="800" src="docs/screenshot_firefox.png" alt="Fastwave - Browser (Firefox)" />
@@ -33,7 +54,7 @@
   <img width="800" src="docs/video_load_save_selected_vars.gif" alt="Fastwave - Load and save selected variables" />
 </p>
 
-<p align="center">Decoders Demo</p> 
+<p align="center">Decoders (Plugins) Demo</p> 
 <p align="center">
   <img width="800" src="docs/video_decoders.gif" alt="Fastwave - Decoders demo" />
 </p>
@@ -97,7 +118,13 @@ Troubleshooting:
 
 1. `makers format`
 
+---
 
+### Rebuild Decoders:
+
+See `test_files/components/[language]_decoder/README.md`
+
+---
 
 ### Test files
 
