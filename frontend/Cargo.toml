@@ -10,6 +10,9 @@ publish.workspace = true
 [dev-dependencies]
 wasm-bindgen-test = "0.3.19"
 
+[lints.rust]
+unexpected_cfgs = { level = "allow", check-cfg = ['cfg(FASTWAVE_PLATFORM)'] }
+
 [dependencies]
 zoon.workspace = true
 wellen.workspace = true
