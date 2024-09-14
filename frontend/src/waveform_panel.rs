@@ -1,4 +1,4 @@
-use crate::{platform, script_bridge, Filename};
+use crate::{platform, script_bridge, Filename, theme::*};
 use std::sync::Arc;
 use wellen::GetItem;
 use zoon::*;
@@ -87,7 +87,7 @@ impl WaveformPanel {
         Button::new()
             .s(Padding::new().x(20).y(10))
             .s(Background::new().color_signal(
-                hovered_signal.map_bool(|| color!("MediumSlateBlue"), || color!("SlateBlue")),
+                hovered_signal.map_bool(|| COLOR_MEDIUM_SLATE_BLUE, || COLOR_SLATE_BLUE),
             ))
             .s(Align::new().left())
             .s(RoundedCorners::all(15))
@@ -123,7 +123,7 @@ impl WaveformPanel {
                     .s(Padding::new().x(20).y(10))
                     .s(Background::new().color_signal(
                         hovered_signal
-                            .map_bool(|| color!("MediumSlateBlue"), || color!("SlateBlue")),
+                            .map_bool(|| COLOR_MEDIUM_SLATE_BLUE, || COLOR_SLATE_BLUE),
                     ))
                     .s(Align::new().left())
                     .s(RoundedCorners::all(15))
@@ -178,7 +178,7 @@ impl WaveformPanel {
         Button::new()
             .s(Padding::new().x(20).y(10))
             .s(Background::new().color_signal(
-                hovered_signal.map_bool(|| color!("MediumSlateBlue"), || color!("SlateBlue")),
+                hovered_signal.map_bool(|| COLOR_MEDIUM_SLATE_BLUE, || COLOR_SLATE_BLUE),
             ))
             .s(RoundedCorners::all(15))
             .label("Save")
@@ -349,7 +349,7 @@ impl WaveformPanel {
             .s(Height::exact(ROW_HEIGHT))
             .s(Width::growable())
             .s(Background::new().color_signal(
-                hovered_signal.map_bool(|| color!("SlateBlue"), || color!("SlateBlue", 0.8)),
+                hovered_signal.map_bool(|| COLOR_SLATE_BLUE, || COLOR_SLATE_BLUE_WITH_ALPHA),
             ))
             .s(RoundedCorners::new().left(15).right(5))
             .label(
@@ -384,7 +384,7 @@ impl WaveformPanel {
             .s(Height::exact(ROW_HEIGHT))
             .s(Width::exact(70))
             .s(Background::new().color_signal(
-                hovered_signal.map_bool(|| color!("SlateBlue"), || color!("SlateBlue", 0.8)),
+                hovered_signal.map_bool(|| COLOR_SLATE_BLUE, || COLOR_SLATE_BLUE_WITH_ALPHA),
             ))
             .s(RoundedCorners::new().left(5))
             .label(

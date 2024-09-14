@@ -1,4 +1,4 @@
-use crate::{Filename, Layout};
+use crate::{Filename, Layout, theme::*};
 use std::cell::Cell;
 use std::mem;
 use std::ops::Not;
@@ -238,9 +238,9 @@ impl ControlsPanel {
         let background_color = map_ref! {
             let is_selected = is_selected,
             let is_hovered = button_hovered_signal => match (*is_selected, *is_hovered) {
-                (true, _) => color!("BlueViolet"),
-                (false, true) => color!("MediumSlateBlue"),
-                (false, false) => color!("SlateBlue"),
+                (true, _) => COLOR_BLUE_VIOLET,
+                (false, true) => COLOR_MEDIUM_SLATE_BLUE,
+                (false, false) => COLOR_SLATE_BLUE,
             }
         };
         let task_collapse_on_parent_collapse = {
@@ -332,7 +332,7 @@ impl ControlsPanel {
                         .map_true(|| 10),
                 ))
             .s(Height::fill())
-            .s(Font::new().color_signal(hovered_signal.map_true(|| color!("LightBlue"))))
+            .s(Font::new().color_signal(hovered_signal.map_true(|| COLOR_LIGHT_BLUE)))
             .label(
                 El::new()
                     .s(Transform::with_signal_self(layout_and_expanded.map(
@@ -488,7 +488,7 @@ impl ControlsPanel {
             Button::new()
                 .s(Padding::new().x(15).y(5))
                 .s(Background::new().color_signal(
-                    hovered_signal.map_bool(|| color!("MediumSlateBlue"), || color!("SlateBlue")),
+                    hovered_signal.map_bool(|| COLOR_MEDIUM_SLATE_BLUE, || COLOR_SLATE_BLUE),
                 ))
                 .s(RoundedCorners::all(15))
                 .on_hovered_change(move |is_hovered| hovered.set_neq(is_hovered))

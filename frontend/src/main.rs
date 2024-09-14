@@ -13,7 +13,7 @@ use waveform_panel::{PixiController, WaveformPanel};
 mod header_panel;
 use header_panel::HeaderPanel;
 
-mod theme;
+pub mod theme;
 use theme::*;
 
 #[derive(Clone, Copy, Default)]
@@ -53,7 +53,7 @@ fn root() -> impl Element {
     Column::new()
         .s(Height::fill())
         .s(Scrollbars::y_and_clip_x())
-        .s(Font::new().color(color!("Lavender")))
+        .s(Font::new().color(COLOR_LAVENDER))
         .item(HeaderPanel::new(
             hierarchy.clone(),
             layout.clone(),

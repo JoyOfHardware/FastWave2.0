@@ -1,4 +1,4 @@
-use crate::{platform, script_bridge, Filename, Layout};
+use crate::{platform, script_bridge, Filename, Layout, theme::*};
 use std::sync::Arc;
 use zoon::*;
 
@@ -45,7 +45,7 @@ impl HeaderPanel {
         Button::new()
             .s(Padding::new().x(20).y(10))
             .s(Background::new().color_signal(
-                hovered_signal.map_bool(|| color!("MediumSlateBlue"), || color!("SlateBlue")),
+                hovered_signal.map_bool(|| COLOR_MEDIUM_SLATE_BLUE, || COLOR_SLATE_BLUE),
             ))
             .s(Align::new().left())
             .s(RoundedCorners::all(15))
@@ -86,7 +86,7 @@ impl HeaderPanel {
                     .s(Padding::new().x(20).y(10))
                     .s(Background::new().color_signal(
                         hovered_signal
-                            .map_bool(|| color!("MediumSlateBlue"), || color!("SlateBlue")),
+                            .map_bool(|| COLOR_MEDIUM_SLATE_BLUE, || COLOR_SLATE_BLUE),
                     ))
                     .s(Align::new().left())
                     .s(RoundedCorners::all(15))
@@ -154,7 +154,7 @@ impl HeaderPanel {
         Button::new()
             .s(Padding::new().x(20).y(10))
             .s(Background::new().color_signal(
-                hovered_signal.map_bool(|| color!("MediumSlateBlue"), || color!("SlateBlue")),
+                hovered_signal.map_bool(|| COLOR_MEDIUM_SLATE_BLUE, || COLOR_SLATE_BLUE),
             ))
             .s(RoundedCorners::all(15))
             .label_signal(layout.signal().map(|layout| match layout {
@@ -206,7 +206,7 @@ impl HeaderPanel {
         let (script, script_signal) = Mutable::new_and_signal_cloned(String::new());
         // @TODO perhaps replace with an element with syntax highlighter like https://github.com/WebCoder49/code-input later
         TextArea::new()
-            .s(Background::new().color(color!("SlateBlue")))
+            .s(Background::new().color(COLOR_SLATE_BLUE))
             .s(Padding::new().x(10).y(8))
             .s(RoundedCorners::all(15))
             .s(Height::default().min(50))
@@ -214,11 +214,11 @@ impl HeaderPanel {
             .s(Font::new()
                 .tracking(1)
                 .weight(FontWeight::Medium)
-                .color(color!("White"))
+                .color(COLOR_WHITE)
                 .family([FontFamily::new("Courier New"), FontFamily::Monospace]))
             .s(Shadows::new([Shadow::new()
                 .inner()
-                .color(color!("DarkSlateBlue"))
+                .color(COLOR_DARK_SLATE_BLUE)
                 .blur(4)]))
             // @TODO `spellcheck` and `resize` to MZ API? (together with autocomplete and others?)
             .update_raw_el(|raw_el| {
@@ -227,7 +227,7 @@ impl HeaderPanel {
                     .style("resize", "vertical")
             })
             .placeholder(
-                Placeholder::new("FW.say_hello()").s(Font::new().color(color!("LightBlue"))),
+                Placeholder::new("FW.say_hello()").s(Font::new().color(COLOR_LIGHT_BLUE)),
             )
             .label_hidden("command editor panel")
             .text_signal(script_signal)
@@ -272,7 +272,7 @@ impl HeaderPanel {
             .s(Font::new()
                 .tracking(1)
                 .weight(FontWeight::Medium)
-                .color(color!("White"))
+                .color(COLOR_WHITE)
                 .family([FontFamily::new("Courier New"), FontFamily::Monospace]))
             .s(Scrollbars::both())
             .s(Height::default().max(100))
