@@ -13,6 +13,9 @@ use waveform_panel::{PixiController, WaveformPanel};
 mod header_panel;
 use header_panel::HeaderPanel;
 
+mod command_panel;
+use command_panel::CommandPanel;
+
 pub mod theme;
 use theme::*;
 
@@ -101,4 +104,5 @@ fn root() -> impl Element {
                 }
             }
         )
+        .item(CommandPanel::new())
 }
