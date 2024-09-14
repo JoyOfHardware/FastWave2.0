@@ -13,8 +13,8 @@ impl CommandPanel {
         Row::new()
             .s(Align::new().top())
             .s(Gap::both(30))
-            .s(Scrollbars::both())
             .s(Width::fill())
+            .s(Padding::new().x(20).bottom(20))
             .item(self.command_editor_panel(command_result.clone()))
             .item(self.command_result_panel(command_result.read_only()))
     }
