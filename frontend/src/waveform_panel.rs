@@ -1,4 +1,4 @@
-use crate::{platform, script_bridge, Filename, theme::*};
+use crate::{platform, script_bridge, theme::*, Filename};
 use std::sync::Arc;
 use wellen::GetItem;
 use zoon::*;
@@ -122,8 +122,7 @@ impl WaveformPanel {
                 Label::new()
                     .s(Padding::new().x(20).y(10))
                     .s(Background::new().color_signal(
-                        hovered_signal
-                            .map_bool(|| COLOR_MEDIUM_SLATE_BLUE, || COLOR_SLATE_BLUE),
+                        hovered_signal.map_bool(|| COLOR_MEDIUM_SLATE_BLUE, || COLOR_SLATE_BLUE),
                     ))
                     .s(Align::new().left())
                     .s(RoundedCorners::all(15))

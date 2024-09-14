@@ -1,4 +1,4 @@
-use crate::{Filename, Layout, theme::*};
+use crate::{theme::*, Filename, Layout};
 use std::cell::Cell;
 use std::mem;
 use std::ops::Not;
