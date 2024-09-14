@@ -3,6 +3,7 @@ use moon::*;
 async fn frontend() -> Frontend {
     Frontend::new()
         .title("FastWave")
+        .append_to_head(include_str!("../favicon.html")) // realfavicongenerator.net
         .append_to_head(concat!("<style>", include_str!("../style.css"), "</style>"))
         .append_to_head(concat!(
             "<script type=\"module\">",
