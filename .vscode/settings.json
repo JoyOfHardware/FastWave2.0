@@ -1,0 +1,12 @@
+{
+    "rust-analyzer.cargo.cfgs": {
+        "FASTWAVE_PLATFORM": "TAURI",
+        // "FASTWAVE_PLATFORM": "BROWSER",
+    },
+    // https://github.com/rustwasm/wasm-bindgen/issues/2339#issuecomment-2147636233
+    "rust-analyzer.cargo.extraEnv": {
+        "RUSTFLAGS": "--cfg=web_sys_unstable_apis"
+    },
+    // to prevent rebuilding from scratch on each change
+    "rust-analyzer.cargo.target": "wasm32-unknown-unknown"
+}
