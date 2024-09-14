@@ -13,6 +13,9 @@ use waveform_panel::{PixiController, WaveformPanel};
 mod header_panel;
 use header_panel::HeaderPanel;
 
+mod theme;
+use theme::*;
+
 #[derive(Clone, Copy, Default)]
 enum Layout {
     Tree,
