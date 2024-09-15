@@ -66,7 +66,13 @@
 
 ---
 
-### Install requirements:
+### Installation (desktop version):
+
+Download and install from [Releases](https://github.com/JoyOfHardware/FastWave2.0/releases/latest)
+
+---
+
+### Requirements to build from source:
 
 1. Install [Rust](https://www.rust-lang.org/tools/install)
 2. Install [Node.js](https://nodejs.org/)
