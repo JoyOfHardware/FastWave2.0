@@ -135,3 +135,13 @@ See `test_files/components/[language]_decoder/README.md`
 ### Test files
 
 See the folder `test_files`.
+
+---
+
+# Sponsors
+
+<p align="center">
+    <a href="https://NLnet.nl">
+        <img src="docs/nlnet_logo.png" width="269" alt="Logo NLnet">
+    </a>
+</p>
