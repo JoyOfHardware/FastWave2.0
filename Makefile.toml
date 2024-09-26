@@ -18,6 +18,7 @@ dependencies = [
     "install_mzoon", 
     "init_pixi_canvas",
     "init_tauri_glue",
+    "init_mermaid",
 ]
 
 [tasks.start]
@@ -27,6 +28,7 @@ run_task = { fork = true, parallel = true, name = [
     "tauri_dev_with_cleanup", 
     "watch_pixi_canvas",
     "watch_tauri_glue",
+    "watch_mermaid",
 ]}
 
 [tasks.start_browser]
@@ -36,6 +38,7 @@ run_task = { fork = true, parallel = true, name = [
     "mzoon_start_with_cleanup", 
     "watch_pixi_canvas",
     "watch_tauri_glue",
+    "watch_mermaid",
 ]}
 
 [tasks.start_browser_release]
@@ -45,6 +48,7 @@ run_task = { fork = true, parallel = true, name = [
     "mzoon_start_release_with_cleanup", 
     "watch_pixi_canvas",
     "watch_tauri_glue",
+    "watch_mermaid",
 ]}
 
 [tasks.bundle]
@@ -272,3 +276,47 @@ args = [
 [tasks.watch_typecheck_tauri_glue.windows]
 command = "node_modules/.bin/tsc.cmd"
 
+## mermaid ##
+
+[tasks.init_mermaid]
+description = "Initialize `frontend/typescript/mermaid`"
+cwd = "frontend/typescript/mermaid"
+command = "npm"
+args = ["install"]
+
+[tasks.init_mermaid.windows]
+command = "npm.cmd"
+
+[tasks.watch_mermaid]
+description = "Build and typescheck Typescript on change"
+run_task = { fork = true, parallel = true, name = [
+    "watch_build_mermaid",
+    "watch_typecheck_mermaid",
+]}
+
+[tasks.watch_build_mermaid]
+description = "Compile `frontend/typescript/mermaid` on change"
+cwd = "frontend/typescript/mermaid"
+command = "node_modules/.bin/esbuild"
+args = ["mermaid.ts", "--bundle", "--outfile=../bundles/mermaid.js", "--format=esm", "--watch"]
+
+[tasks.watch_build_mermaid.windows]
+command = "node_modules/.bin/esbuild.cmd"
+
+[tasks.watch_typecheck_mermaid]
+description = "Typecheck `frontend/typescript/mermaid` on change"
+cwd = "frontend/typescript/mermaid"
+command = "node_modules/.bin/tsc"
+args = [
+    "mermaid.ts",
+    "--watch",
+    "--noEmit",
+    "--preserveWatchOutput",
+    "--strict",
+    "--target", "esnext",
+    "--module", "esnext",
+    "--moduleResolution", "bundler",
+]
+
+[tasks.watch_typecheck_mermaid.windows]
+command = "node_modules/.bin/tsc.cmd"
