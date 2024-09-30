@@ -18,7 +18,7 @@ dependencies = [
     "install_mzoon", 
     "init_pixi_canvas",
     "init_tauri_glue",
-    "init_mermaid",
+    "init_excalidraw_canvas",
 ]
 
 [tasks.start]
@@ -28,7 +28,7 @@ run_task = { fork = true, parallel = true, name = [
     "tauri_dev_with_cleanup", 
     "watch_pixi_canvas",
     "watch_tauri_glue",
-    "watch_mermaid",
+    "watch_excalidraw_canvas",
 ]}
 
 [tasks.start_browser]
@@ -38,7 +38,7 @@ run_task = { fork = true, parallel = true, name = [
     "mzoon_start_with_cleanup", 
     "watch_pixi_canvas",
     "watch_tauri_glue",
-    "watch_mermaid",
+    "watch_excalidraw_canvas",
 ]}
 
 [tasks.start_browser_release]
@@ -48,7 +48,7 @@ run_task = { fork = true, parallel = true, name = [
     "mzoon_start_release_with_cleanup", 
     "watch_pixi_canvas",
     "watch_tauri_glue",
-    "watch_mermaid",
+    "watch_excalidraw_canvas",
 ]}
 
 [tasks.bundle]
@@ -276,39 +276,39 @@ args = [
 [tasks.watch_typecheck_tauri_glue.windows]
 command = "node_modules/.bin/tsc.cmd"
 
-## mermaid ##
+## excalidraw_canvas ##
 
-[tasks.init_mermaid]
-description = "Initialize `frontend/typescript/mermaid`"
-cwd = "frontend/typescript/mermaid"
+[tasks.init_excalidraw_canvas]
+description = "Initialize `frontend/typescript/excalidraw_canvas`"
+cwd = "frontend/typescript/excalidraw_canvas"
 command = "npm"
 args = ["install"]
 
-[tasks.init_mermaid.windows]
+[tasks.init_excalidraw_canvas.windows]
 command = "npm.cmd"
 
-[tasks.watch_mermaid]
+[tasks.watch_excalidraw_canvas]
 description = "Build and typescheck Typescript on change"
 run_task = { fork = true, parallel = true, name = [
-    "watch_build_mermaid",
-    "watch_typecheck_mermaid",
+    "watch_build_excalidraw_canvas",
+    "watch_typecheck_excalidraw_canvas",
 ]}
 
-[tasks.watch_build_mermaid]
-description = "Compile `frontend/typescript/mermaid` on change"
-cwd = "frontend/typescript/mermaid"
+[tasks.watch_build_excalidraw_canvas]
+description = "Compile `frontend/typescript/excalidraw_canvas` on change"
+cwd = "frontend/typescript/excalidraw_canvas"
 command = "node_modules/.bin/esbuild"
-args = ["mermaid.ts", "--bundle", "--outfile=../bundles/mermaid.js", "--format=esm", "--watch"]
+args = ["excalidraw_canvas.ts", "--bundle", "--outfile=../bundles/excalidraw_canvas.js", "--format=esm", "--watch"]
 
-[tasks.watch_build_mermaid.windows]
+[tasks.watch_build_excalidraw_canvas.windows]
 command = "node_modules/.bin/esbuild.cmd"
 
-[tasks.watch_typecheck_mermaid]
-description = "Typecheck `frontend/typescript/mermaid` on change"
-cwd = "frontend/typescript/mermaid"
+[tasks.watch_typecheck_excalidraw_canvas]
+description = "Typecheck `frontend/typescript/excalidraw_canvas` on change"
+cwd = "frontend/typescript/excalidraw_canvas"
 command = "node_modules/.bin/tsc"
 args = [
-    "mermaid.ts",
+    "excalidraw_canvas.ts",
     "--watch",
     "--noEmit",
     "--preserveWatchOutput",
@@ -318,5 +318,5 @@ args = [
     "--moduleResolution", "bundler",
 ]
 
-[tasks.watch_typecheck_mermaid.windows]
+[tasks.watch_typecheck_excalidraw_canvas.windows]
 command = "node_modules/.bin/tsc.cmd"
