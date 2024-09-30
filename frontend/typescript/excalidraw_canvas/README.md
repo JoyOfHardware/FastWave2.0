@@ -10,4 +10,5 @@ Watch & typecheck (without building)
 Created with commands:
 - `npm i -E react react-dom @excalidraw/excalidraw`
 - `npm i -E @types/react @types/react-dom`
+- `npm i -E roughjs @excalidraw/laser-pointer jotai browser-fs-access`
 - `npm i -D esbuild typescript`
