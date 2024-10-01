@@ -280,12 +280,25 @@ command = "node_modules/.bin/tsc.cmd"
 
 [tasks.init_excalidraw_canvas]
 description = "Initialize `frontend/typescript/excalidraw_canvas`"
+dependencies = [
+    "init_excalidraw_canvas_npm_install", 
+    "init_excalidraw_canvas_en_json", 
+]
+
+[tasks.init_excalidraw_canvas_npm_install]
+description = "Partly initialize `frontend/typescript/excalidraw_canvas`"
 cwd = "frontend/typescript/excalidraw_canvas"
 command = "npm"
 args = ["install"]
 
-[tasks.init_excalidraw_canvas.windows]
+[tasks.init_excalidraw_canvas_npm_install.windows]
 command = "npm.cmd"
+
+[tasks.init_excalidraw_canvas_en_json]
+description = "Partly initialize `frontend/typescript/excalidraw_canvas`"
+cwd = "frontend/typescript/excalidraw_canvas"
+command = "cp"
+args = ["-r", "locales", "node_modules/@excalidraw/excalidraw/types/"]
 
 [tasks.watch_excalidraw_canvas]
 description = "Build and typescheck Typescript on change"
