@@ -1,10 +1,13 @@
-use crate::{platform, theme::*, Filename, Layout};
+use crate::{platform, theme::*, Filename, Layout, Mode};
 use std::sync::Arc;
 use zoon::*;
+
+
 
 pub struct HeaderPanel {
     hierarchy: Mutable<Option<Arc<wellen::Hierarchy>>>,
     layout: Mutable<Layout>,
+    mode: Mutable<Mode>,
     loaded_filename: Mutable<Option<Filename>>,
 }
 
@@ -12,12 +15,14 @@ impl HeaderPanel {
     pub fn new(
         hierarchy: Mutable<Option<Arc<wellen::Hierarchy>>>,
         layout: Mutable<Layout>,
+        mode: Mutable<Mode>,
         loaded_filename: Mutable<Option<Filename>>,
     ) -> impl Element {
         Self {
             hierarchy,
             layout,
             loaded_filename,
+            mode,
         }
         .root()
     }
@@ -32,7 +37,8 @@ impl HeaderPanel {
                     .s(Padding::new().top(5))
                     .s(Gap::both(15))
                     .item(self.load_button())
-                    .item(self.layout_switcher()),
+                    .item(self.layout_switcher())
+                    .item(self.mode_switcher())
             )
     }
 
@@ -164,6 +170,28 @@ impl HeaderPanel {
                 layout.update(|layout| match layout {
                     Layout::Tree => Layout::Columns,
                     Layout::Columns => Layout::Tree,
+                })
+            })
+    }
+
+    fn mode_switcher(&self) -> impl Element {
+        let mode = self.mode.clone();
+        let (hovered, hovered_signal) = Mutable::new_and_signal(false);
+        Button::new()
+            .s(Padding::new().x(20).y(10))
+            .s(Background::new().color_signal(
+                hovered_signal.map_bool(|| COLOR_MEDIUM_SLATE_BLUE, || COLOR_SLATE_BLUE),
+            ))
+            .s(RoundedCorners::all(15))
+            .label_signal(mode.signal().map(|mode| match mode {
+                Mode::Waves => "Diagrams",
+                Mode::Diagrams => "Waves",
+            }))
+            .on_hovered_change(move |is_hovered| hovered.set_neq(is_hovered))
+            .on_press(move || {
+                mode.update(|mode| match mode {
+                    Mode::Waves => Mode::Diagrams,
+                    Mode::Diagrams => Mode::Waves,
                 })
             })
     }
