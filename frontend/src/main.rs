@@ -26,6 +26,13 @@ enum Layout {
     Columns,
 }
 
+#[derive(Clone, Copy, Default)]
+enum Mode {
+    #[default]
+    Waves,
+    Diagrams,
+}
+
 type Filename = String;
 
 #[derive(Default)]
@@ -51,6 +58,7 @@ fn root() -> impl Element {
     let hierarchy = STORE.hierarchy.clone();
     let selected_var_refs = STORE.selected_var_refs.clone();
     let layout: Mutable<Layout> = <_>::default();
+    let mode: Mutable<Mode> = <_>::default();
     let loaded_filename = STORE.loaded_filename.clone();
     let canvas_controller = STORE.canvas_controller.clone();
     Column::new()
@@ -60,6 +68,7 @@ fn root() -> impl Element {
         .item(HeaderPanel::new(
             hierarchy.clone(),
             layout.clone(),
+            mode.clone(),
             loaded_filename.clone(),
         ))
         .item(
