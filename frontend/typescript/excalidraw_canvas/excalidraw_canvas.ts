@@ -15,7 +15,11 @@ export class ExcalidrawController {
                 {
                   style: { height: "100%" },
                 },
-                React.createElement(Excalidraw),
+                React.createElement(Excalidraw, { 
+                    theme: 'dark',
+                    gridModeEnabled: true,
+                    UIOptions: { canvasActions: { toggleTheme: true } }
+                }),
               ),
             );
           };
