@@ -62,7 +62,7 @@ impl ExcalidrawCanvas {
 mod js_bridge {
     use zoon::*;
 
-    // Note: Add all corresponding methods to `frontend/typescript/excalidraw_canvas/excalidraw_canvas.ts`
+    // Note: Add all corresponding methods to `frontend/typescript/excalidraw_canvas/excalidraw_canvas.tsx`
     #[wasm_bindgen(module = "/typescript/bundles/excalidraw_canvas.js")]
     extern "C" {
         #[derive(Clone)]

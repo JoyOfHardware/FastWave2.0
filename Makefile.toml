@@ -311,7 +311,7 @@ run_task = { fork = true, parallel = true, name = [
 description = "Compile `frontend/typescript/excalidraw_canvas` on change"
 cwd = "frontend/typescript/excalidraw_canvas"
 command = "node_modules/.bin/esbuild"
-args = ["excalidraw_canvas.ts", "--bundle", "--outfile=../bundles/excalidraw_canvas.js", "--format=esm", "--watch"]
+args = ["excalidraw_canvas.tsx", "--bundle", "--outfile=../bundles/excalidraw_canvas.js", "--format=esm", "--watch"]
 
 [tasks.watch_build_excalidraw_canvas.windows]
 command = "node_modules/.bin/esbuild.cmd"
@@ -321,7 +321,8 @@ description = "Typecheck `frontend/typescript/excalidraw_canvas` on change"
 cwd = "frontend/typescript/excalidraw_canvas"
 command = "node_modules/.bin/tsc"
 args = [
-    "excalidraw_canvas.ts",
+    "excalidraw_canvas.tsx",
+    "--jsx",
     "--watch",
     "--noEmit",
     "--preserveWatchOutput",
