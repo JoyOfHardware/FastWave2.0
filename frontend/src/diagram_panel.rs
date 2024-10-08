@@ -38,7 +38,8 @@ impl DiagramPanel {
             .s(Height::fill())
             .task_with_controller(move |controller| {
                 canvas_controller.set(controller.clone());
-                println!("hello from task_with_controller")
+                zoon::println!("hello from task_with_controller");
+                async {}
             })
     }
 }
