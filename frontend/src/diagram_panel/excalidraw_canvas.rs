@@ -1,6 +1,4 @@
-use crate::platform;
 pub use js_bridge::ExcalidrawController;
-use std::rc::Rc;
 use zoon::*;
 
 pub struct ExcalidrawCanvas {
@@ -63,38 +61,14 @@ impl ExcalidrawCanvas {
                     width.set_neq(new_width);
                     height.set_neq(new_height);
                 }))
-                .update_raw_el(|raw_el| {
-                    // @TODO rewrite to a native Zoon API
-                    raw_el.event_handler_with_options(
-                        EventOptions::new().preventable(),
-                        clone!((controller) move |event: events_extra::WheelEvent| {
-                            event.prevent_default();
-                            if let Some(controller) = controller.lock_ref().as_ref() {
-                                controller.zoom_or_pan(
-                                    event.delta_y(),
-                                    event.shift_key(),
-                                    event.offset_x() as u32,
-                                );
-                            }
-                        }),
-                    )
-                })
-                .after_insert(clone!((controller, timeline_getter) move |element| {
+                .after_insert(clone!((controller) move |element| {
                     Task::start(async move {
-                        let pixi_controller = SendWrapper::new(js_bridge::ExcalidrawController::new(
-                            1.,
-                            width.get(),
-                            0,
-                            row_height,
-                            row_gap,
-                            &timeline_getter
-                        ));
-                        pixi_controller.init(&element).await;
-                        controller.set(Some(pixi_controller));
+                        let excalidraw_controller = SendWrapper::new(js_bridge::ExcalidrawController::new());
+                        excalidraw_controller.init(&element).await;
+                        controller.set(Some(excalidraw_controller));
                     });
                 }))
                 .after_remove(move |_| {
-                    drop(timeline_getter);
                     drop(resize_task);
                     drop(task_with_controller);
                     if let Some(controller) = controller.take() {
@@ -124,6 +98,9 @@ mod js_bridge {
         #[derive(Clone)]
         pub type ExcalidrawController;
 
+        #[wasm_bindgen(constructor)]
+        pub fn new() -> ExcalidrawController;
+
         #[wasm_bindgen(method)]
         pub async fn init(this: &ExcalidrawController, parent_element: &JsValue);
 
@@ -136,6 +113,6 @@ mod js_bridge {
         // -- FastWave-specific --
 
         #[wasm_bindgen(method)]
-        pub fn get_timeline_zoom(this: &ExcalidrawController) -> f64;
+        pub fn hello(this: &ExcalidrawController);
     }
 }
