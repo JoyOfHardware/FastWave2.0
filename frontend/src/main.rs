@@ -8,7 +8,7 @@ mod controls_panel;
 use controls_panel::ControlsPanel;
 
 mod diagram_panel;
-use diagram_panel::{ExcalidrawController, DiagramPanel};
+use diagram_panel::{DiagramPanel, ExcalidrawController};
 
 mod waveform_panel;
 use waveform_panel::{PixiController, WaveformPanel};

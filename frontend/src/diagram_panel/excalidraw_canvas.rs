@@ -4,10 +4,6 @@ use zoon::*;
 pub struct ExcalidrawCanvas {
     raw_el: RawHtmlEl<web_sys::HtmlElement>,
     controller: Mutable<Option<SendWrapper<js_bridge::ExcalidrawController>>>,
-    #[allow(dead_code)]
-    width: ReadOnlyMutable<u32>,
-    #[allow(dead_code)]
-    height: ReadOnlyMutable<u32>,
     task_with_controller: Mutable<Option<TaskHandle>>,
 }
 
@@ -32,35 +28,13 @@ impl ExcalidrawCanvas {
     pub fn new() -> Self {
         let controller: Mutable<Option<SendWrapper<js_bridge::ExcalidrawController>>> =
             Mutable::new(None);
-        let width = Mutable::new(0);
-        let height = Mutable::new(0);
-        let resize_task = Task::start_droppable(
-            map_ref! {
-                let width = width.signal(),
-                let height = height.signal() => (*width, *height)
-            }
-            .dedupe()
-            .throttle(|| Timer::sleep(50))
-            .for_each(
-                clone!((controller) move |(width, height)| clone!((controller) async move {
-                    if let Some(controller) = controller.lock_ref().as_ref() {
-                        controller.resize(width, height).await
-                    }
-                })),
-            ),
-        );
         let task_with_controller = Mutable::new(None);
         Self {
             controller: controller.clone(),
-            width: width.read_only(),
-            height: height.read_only(),
             task_with_controller: task_with_controller.clone(),
             raw_el: El::new()
+                .s(RoundedCorners::all(10))
                 .s(Clip::both())
-                .on_viewport_size_change(clone!((width, height) move |new_width, new_height| {
-                    width.set_neq(new_width);
-                    height.set_neq(new_height);
-                }))
                 .after_insert(clone!((controller) move |element| {
                     Task::start(async move {
                         let excalidraw_controller = SendWrapper::new(js_bridge::ExcalidrawController::new());
@@ -69,11 +43,7 @@ impl ExcalidrawCanvas {
                     });
                 }))
                 .after_remove(move |_| {
-                    drop(resize_task);
                     drop(task_with_controller);
-                    if let Some(controller) = controller.take() {
-                        controller.destroy();
-                    }
                 })
                 .into_raw_el(),
         }
@@ -103,16 +73,5 @@ mod js_bridge {
 
         #[wasm_bindgen(method)]
         pub async fn init(this: &ExcalidrawController, parent_element: &JsValue);
-
-        #[wasm_bindgen(method)]
-        pub async fn resize(this: &ExcalidrawController, width: u32, height: u32);
-
-        #[wasm_bindgen(method)]
-        pub fn destroy(this: &ExcalidrawController);
-
-        // -- FastWave-specific --
-
-        #[wasm_bindgen(method)]
-        pub fn hello(this: &ExcalidrawController);
     }
 }

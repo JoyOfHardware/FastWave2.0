@@ -6,17 +6,14 @@ pub use excalidraw_canvas::ExcalidrawController;
 
 #[derive(Clone)]
 pub struct DiagramPanel {
-    canvas_controller: Mutable<Mutable<Option<SendWrapper<ExcalidrawController>>>>
+    canvas_controller: Mutable<Mutable<Option<SendWrapper<ExcalidrawController>>>>,
 }
 
 impl DiagramPanel {
     pub fn new(
         canvas_controller: Mutable<Mutable<Option<SendWrapper<ExcalidrawController>>>>,
     ) -> impl Element {
-        Self {
-            canvas_controller
-        }
-        .root()
+        Self { canvas_controller }.root()
     }
 
     fn root(&self) -> impl Element {
@@ -26,7 +23,6 @@ impl DiagramPanel {
             .s(Width::fill())
             .s(Height::fill())
             .s(Gap::new().y(20))
-            .item("Diagram panel")
             .item(self.canvas())
     }
 
@@ -38,7 +34,6 @@ impl DiagramPanel {
             .s(Height::fill())
             .task_with_controller(move |controller| {
                 canvas_controller.set(controller.clone());
-                zoon::println!("hello from task_with_controller");
                 async {}
             })
     }
