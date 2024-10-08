@@ -2,8 +2,6 @@ use crate::{platform, theme::*, Filename, Layout, Mode};
 use std::sync::Arc;
 use zoon::*;
 
-
-
 pub struct HeaderPanel {
     hierarchy: Mutable<Option<Arc<wellen::Hierarchy>>>,
     layout: Mutable<Layout>,
@@ -38,7 +36,7 @@ impl HeaderPanel {
                     .s(Gap::both(15))
                     .item(self.load_button())
                     .item(self.layout_switcher())
-                    .item(self.mode_switcher())
+                    .item(self.mode_switcher()),
             )
     }
 
