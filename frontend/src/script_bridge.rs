@@ -78,4 +78,17 @@ impl FW {
     pub async fn remove_all_decoders() -> RemovedDecodersCount {
         platform::remove_all_decoders().await
     }
+
+    // @TODO replace argument once Excalidraw's `convertToExcalidrawElements` works: {type: "rectangle", x: 100, y: 250}
+    /// JS: `FW.draw_diagram_element({id: 'my_rectangle', type: 'rectangle', x: 500,  y: 250, strokeColor: 'black', backgroundColor: 'lightblue', fillStyle: 'solid', strokeWidth: 5, strokeStyle: 'solid', roundness: null, roughness: 0, opacity: 100, width: 100, height: 50, angle: 0, seed: 0, version: 0, versionNonce: 0, isDeleted: false, groupIds: [], frameId: null, boundElements: null, updated: 0, link: null, locked: false, customData: {}})`
+    pub async fn draw_diagram_element(excalidraw_element: JsValue) {
+        if let Some(controller) = STORE
+            .excalidraw_canvas_controller
+            .lock_ref()
+            .lock_ref()
+            .as_ref()
+        {
+            controller.draw_diagram_element(excalidraw_element)
+        }
+    }
 }
