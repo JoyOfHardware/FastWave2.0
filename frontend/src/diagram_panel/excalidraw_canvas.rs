@@ -73,5 +73,8 @@ mod js_bridge {
 
         #[wasm_bindgen(method)]
         pub async fn init(this: &ExcalidrawController, parent_element: &JsValue);
+
+        #[wasm_bindgen(method)]
+        pub fn draw_diagram_element(this: &ExcalidrawController, excalidraw_element: JsValue);
     }
 }
