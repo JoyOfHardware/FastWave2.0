@@ -208,7 +208,14 @@ run_task = { fork = true, parallel = true, name = [
 description = "Compile `frontend/typescript/pixi_canvas` on change"
 cwd = "frontend/typescript/pixi_canvas"
 command = "node_modules/.bin/esbuild"
-args = ["pixi_canvas.ts", "--bundle", "--outfile=../bundles/pixi_canvas.js", "--format=esm", "--watch"]
+args = [
+    "pixi_canvas.ts",
+    "--bundle",
+    "--outfile=../bundles/pixi_canvas.js",
+    "--format=esm",
+    "--minify",
+    "--watch"
+]
 
 [tasks.watch_build_pixi_canvas.windows]
 command = "node_modules/.bin/esbuild.cmd"
@@ -253,7 +260,14 @@ run_task = { fork = true, parallel = true, name = [
 description = "Compile `frontend/typescript/tauri_glue` on change"
 cwd = "frontend/typescript/tauri_glue"
 command = "node_modules/.bin/esbuild"
-args = ["tauri_glue.ts", "--bundle", "--outfile=../bundles/tauri_glue.js", "--format=esm", "--watch"]
+args = [
+    "tauri_glue.ts",
+    "--bundle",
+    "--outfile=../bundles/tauri_glue.js",
+    "--format=esm",
+    "--minify",
+    "--watch"
+]
 
 [tasks.watch_build_tauri_glue.windows]
 command = "node_modules/.bin/esbuild.cmd"
@@ -311,7 +325,14 @@ run_task = { fork = true, parallel = true, name = [
 description = "Compile `frontend/typescript/excalidraw_canvas` on change"
 cwd = "frontend/typescript/excalidraw_canvas"
 command = "node_modules/.bin/esbuild"
-args = ["excalidraw_canvas.tsx", "--bundle", "--outfile=../bundles/excalidraw_canvas.js", "--format=esm", "--watch"]
+args = [
+    "excalidraw_canvas.tsx",
+    "--bundle",
+    "--outfile=../bundles/excalidraw_canvas.js",
+    "--format=esm",
+    "--minify",
+    "--watch",
+]
 
 [tasks.watch_build_excalidraw_canvas.windows]
 command = "node_modules/.bin/esbuild.cmd"
