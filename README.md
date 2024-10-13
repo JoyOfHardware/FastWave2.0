@@ -64,6 +64,11 @@
   <img width="500" src="docs/screenshot_world_wit.png" alt="Fastwave - Decoder Interface" />
 </p>
 
+<p align="center">Diagrams - open, edit, JS API</p>
+<p align="center">
+  <img width="800" src="docs/video_diagrams.gif" alt="Fastwave - Diagrams" />
+</p>
+
 ---
 
 ### Installation (desktop version):
