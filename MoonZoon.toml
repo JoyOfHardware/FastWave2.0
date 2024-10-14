@@ -25,6 +25,7 @@ frontend = [
 backend = [
     "backend/Cargo.toml",
     "backend/src",
+    "backend/globals.js",
     "backend/index.js",
     "backend/style.css",
 ]

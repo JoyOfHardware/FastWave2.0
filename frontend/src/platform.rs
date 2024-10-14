@@ -81,7 +81,7 @@ pub async fn remove_all_decoders() -> RemovedDecodersCount {
 }
 
 async fn redraw_all_timeline_rows() {
-    if let Some(controller) = STORE.canvas_controller.get_cloned().get_cloned() {
+    if let Some(controller) = STORE.pixi_canvas_controller.get_cloned().get_cloned() {
         controller.redraw_all_rows().await
     }
 }
