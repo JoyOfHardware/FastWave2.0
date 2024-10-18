@@ -343,7 +343,7 @@ cwd = "frontend/typescript/excalidraw_canvas"
 command = "node_modules/.bin/tsc"
 args = [
     "excalidraw_canvas.tsx",
-    "--jsx",
+    "--jsx", "react",
     "--watch",
     "--noEmit",
     "--preserveWatchOutput",
