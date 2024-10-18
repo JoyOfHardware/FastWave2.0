@@ -18,6 +18,7 @@ dependencies = [
     "install_mzoon", 
     "init_pixi_canvas",
     "init_tauri_glue",
+    "init_excalidraw_canvas",
 ]
 
 [tasks.start]
@@ -27,6 +28,7 @@ run_task = { fork = true, parallel = true, name = [
     "tauri_dev_with_cleanup", 
     "watch_pixi_canvas",
     "watch_tauri_glue",
+    "watch_excalidraw_canvas",
 ]}
 
 [tasks.start_browser]
@@ -36,6 +38,7 @@ run_task = { fork = true, parallel = true, name = [
     "mzoon_start_with_cleanup", 
     "watch_pixi_canvas",
     "watch_tauri_glue",
+    "watch_excalidraw_canvas",
 ]}
 
 [tasks.start_browser_release]
@@ -45,6 +48,7 @@ run_task = { fork = true, parallel = true, name = [
     "mzoon_start_release_with_cleanup", 
     "watch_pixi_canvas",
     "watch_tauri_glue",
+    "watch_excalidraw_canvas",
 ]}
 
 [tasks.bundle]
@@ -204,7 +208,14 @@ run_task = { fork = true, parallel = true, name = [
 description = "Compile `frontend/typescript/pixi_canvas` on change"
 cwd = "frontend/typescript/pixi_canvas"
 command = "node_modules/.bin/esbuild"
-args = ["pixi_canvas.ts", "--bundle", "--outfile=../bundles/pixi_canvas.js", "--format=esm", "--watch"]
+args = [
+    "pixi_canvas.ts",
+    "--bundle",
+    "--outfile=../bundles/pixi_canvas.js",
+    "--format=esm",
+    "--minify",
+    "--watch"
+]
 
 [tasks.watch_build_pixi_canvas.windows]
 command = "node_modules/.bin/esbuild.cmd"
@@ -249,7 +260,14 @@ run_task = { fork = true, parallel = true, name = [
 description = "Compile `frontend/typescript/tauri_glue` on change"
 cwd = "frontend/typescript/tauri_glue"
 command = "node_modules/.bin/esbuild"
-args = ["tauri_glue.ts", "--bundle", "--outfile=../bundles/tauri_glue.js", "--format=esm", "--watch"]
+args = [
+    "tauri_glue.ts",
+    "--bundle",
+    "--outfile=../bundles/tauri_glue.js",
+    "--format=esm",
+    "--minify",
+    "--watch"
+]
 
 [tasks.watch_build_tauri_glue.windows]
 command = "node_modules/.bin/esbuild.cmd"
@@ -272,3 +290,68 @@ args = [
 [tasks.watch_typecheck_tauri_glue.windows]
 command = "node_modules/.bin/tsc.cmd"
 
+## excalidraw_canvas ##
+
+[tasks.init_excalidraw_canvas]
+description = "Initialize `frontend/typescript/excalidraw_canvas`"
+dependencies = [
+    "init_excalidraw_canvas_npm_install", 
+    "init_excalidraw_canvas_en_json", 
+]
+
+[tasks.init_excalidraw_canvas_npm_install]
+description = "Partly initialize `frontend/typescript/excalidraw_canvas`"
+cwd = "frontend/typescript/excalidraw_canvas"
+command = "npm"
+args = ["install"]
+
+[tasks.init_excalidraw_canvas_npm_install.windows]
+command = "npm.cmd"
+
+[tasks.init_excalidraw_canvas_en_json]
+description = "Partly initialize `frontend/typescript/excalidraw_canvas`"
+cwd = "frontend/typescript/excalidraw_canvas"
+command = "cp"
+args = ["-r", "locales", "node_modules/@excalidraw/excalidraw/types/"]
+
+[tasks.watch_excalidraw_canvas]
+description = "Build and typescheck Typescript on change"
+run_task = { fork = true, parallel = true, name = [
+    "watch_build_excalidraw_canvas",
+    "watch_typecheck_excalidraw_canvas",
+]}
+
+[tasks.watch_build_excalidraw_canvas]
+description = "Compile `frontend/typescript/excalidraw_canvas` on change"
+cwd = "frontend/typescript/excalidraw_canvas"
+command = "node_modules/.bin/esbuild"
+args = [
+    "excalidraw_canvas.tsx",
+    "--bundle",
+    "--outfile=../bundles/excalidraw_canvas.js",
+    "--format=esm",
+    "--minify",
+    "--watch",
+]
+
+[tasks.watch_build_excalidraw_canvas.windows]
+command = "node_modules/.bin/esbuild.cmd"
+
+[tasks.watch_typecheck_excalidraw_canvas]
+description = "Typecheck `frontend/typescript/excalidraw_canvas` on change"
+cwd = "frontend/typescript/excalidraw_canvas"
+command = "node_modules/.bin/tsc"
+args = [
+    "excalidraw_canvas.tsx",
+    "--jsx", "react",
+    "--watch",
+    "--noEmit",
+    "--preserveWatchOutput",
+    "--strict",
+    "--target", "esnext",
+    "--module", "esnext",
+    "--moduleResolution", "bundler",
+]
+
+[tasks.watch_typecheck_excalidraw_canvas.windows]
+command = "node_modules/.bin/tsc.cmd"
