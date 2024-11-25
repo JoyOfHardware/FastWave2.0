@@ -3,9 +3,14 @@ use wellen::GetItem;
 use zoon::*;
 
 type FullVarName = String;
+
 type AddedDecodersCount = usize;
 type RemovedDecodersCount = usize;
 type DecoderPath = String;
+
+type AddedDiagramConnectorsCount = usize;
+type RemovedDiagramConnectorsCount = usize;
+type DiagramConnectorPath = String;
 
 #[wasm_bindgen(module = "/typescript/bundles/strict_eval.js")]
 extern "C" {
@@ -90,5 +95,17 @@ impl FW {
         {
             controller.draw_diagram_element(excalidraw_element)
         }
+    }
+
+    /// JS: `FW.add_diagram_connectors(["../test_files/components/rust_diagram_connector/rust_diagram_connector.wasm"])` -> `1`
+    pub async fn add_diagram_connectors(
+        connector_paths: Vec<DiagramConnectorPath>,
+    ) -> AddedDiagramConnectorsCount {
+        platform::add_diagram_connectors(connector_paths).await
+    }
+
+    /// JS: `FW.remove_all_diagram_connectors()` -> `5`
+    pub async fn remove_all_diagram_connectors() -> RemovedDiagramConnectorsCount {
+        platform::remove_all_diagram_connectors().await
     }
 }

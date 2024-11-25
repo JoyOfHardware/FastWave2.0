@@ -3,7 +3,9 @@ members = [
     "frontend",
     "backend",
     "shared",
-    "src-tauri", "test_files/components/rust_decoder",
+    "src-tauri", 
+    "test_files/components/rust_decoder",
+    "test_files/components/rust_diagram_connector",
 ]
 resolver = "2"
 

@@ -1,4 +1,5 @@
-use std::sync::Arc;
+use shared::DiagramConnectorMessage;
+use std::{mem, sync::Arc};
 use zoon::*;
 
 mod platform;
@@ -53,10 +54,52 @@ static STORE: Lazy<Store> = lazy::default();
 
 fn main() {
     start_app("app", root);
+
     Task::start(async {
         // https://github.com/tauri-apps/tauri/issues/5170
         Timer::sleep(100).await;
         platform::show_window().await;
+    });
+
+    Task::start(async {
+        platform::listen_diagram_connectors_messages(|message| {
+            match message {
+                DiagramConnectorMessage::ListenForComponentTextChanges {
+                    diagram_connector_name,
+                    component_id,
+                } => {
+                    let closure = Closure::new({
+                        // @TODO Rcs/Arcs?
+                        let diagram_connector_name = diagram_connector_name.clone();
+                        let component_id = component_id.clone();
+                        move |text| {
+                            Task::start(platform::notify_diagram_connector_text_change(
+                                diagram_connector_name.clone(),
+                                component_id.clone(),
+                                text,
+                            ));
+                        }
+                    });
+                    STORE
+                        .excalidraw_canvas_controller
+                        .lock_ref()
+                        .lock_ref()
+                        .as_ref()
+                        .unwrap_throw()
+                        .listen_for_component_text_changes(&component_id, &closure);
+                    // @TODO don't forget
+                    mem::forget(closure);
+                }
+                DiagramConnectorMessage::SetComponentText { component_id, text } => STORE
+                    .excalidraw_canvas_controller
+                    .lock_ref()
+                    .lock_ref()
+                    .as_ref()
+                    .unwrap_throw()
+                    .set_component_text(&component_id, &text),
+            }
+        })
+        .await
     });
 }
 

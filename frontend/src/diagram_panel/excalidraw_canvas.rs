@@ -76,5 +76,15 @@ mod js_bridge {
 
         #[wasm_bindgen(method)]
         pub fn draw_diagram_element(this: &ExcalidrawController, excalidraw_element: JsValue);
+
+        #[wasm_bindgen(method)]
+        pub fn listen_for_component_text_changes(
+            this: &ExcalidrawController,
+            component_id: &str,
+            on_change: &Closure<dyn Fn(String)>,
+        );
+
+        #[wasm_bindgen(method)]
+        pub fn set_component_text(this: &ExcalidrawController, component_id: &str, text: &str);
     }
 }
