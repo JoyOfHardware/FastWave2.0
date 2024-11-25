@@ -30,3 +30,16 @@ pub struct TimeLineBlockLabel {
     pub x: u32,
     pub y: u32,
 }
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(crate = "serde")]
+pub enum DiagramConnectorMessage {
+    ListenForComponentTextChanges {
+        diagram_connector_name: String,
+        component_id: String,
+    },
+    SetComponentText {
+        component_id: String,
+        text: String,
+    },
+}

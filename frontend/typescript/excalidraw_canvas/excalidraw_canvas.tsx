@@ -7,17 +7,64 @@ import * as React from 'react'
 import * as ReactDOM from 'react-dom/client'
 
 export class ExcalidrawController {
-    api: ExcalidrawImperativeAPI | undefined
+    api: Promise<ExcalidrawImperativeAPI>
+    resolve_api: (api: ExcalidrawImperativeAPI) => void
 
-    constructor() {}
+    constructor() {
+      this.resolve_api = (api) => {};
+      this.api = new Promise(resolve => {
+        this.resolve_api = (api) => resolve(api)
+      });
+    }
 
     draw_diagram_element(excalidraw_element: ExcalidrawElement) {
-      if (typeof this.api !== 'undefined') {
-        const elements = this.api.getSceneElements()
-        this.api.updateScene({
+      this.api.then(api => {
+        const elements = api.getSceneElements()
+        api.updateScene({
           elements: elements.concat(excalidraw_element)
         })
-      }
+      });
+    }
+
+    listen_for_component_text_changes(id: string, on_change: (text: string) => void) {
+      this.api.then(api => {
+        let old_text: string | null = null; 
+        api.onChange((elements: readonly ExcalidrawElement[]) => {
+          const element = elements.find(element => element.id === id);
+          if (typeof element !== 'undefined') {
+            if (element.type === 'text') {
+              if (old_text === null) {
+                old_text = element.text;
+                on_change(old_text);
+              } else {
+                if (old_text !== element.text) {
+                  old_text = element.text;
+                  on_change(old_text);
+                }
+              }
+            }
+          }
+        })
+      })
+    }
+
+    set_component_text(id: string, text: string) {
+      this.api.then(api => {
+        let element_found = false;
+        const elements = api.getSceneElements().map(element => {
+          if (element.id === id) {
+            element_found = true;
+            return { ...element, text: text, originalText: text }
+          } else {
+            return element
+          }
+        });
+        if (element_found) {
+            api.updateScene({
+              elements
+            })
+        }
+      })
     }
 
     async init(parent_element: HTMLElement) {
@@ -37,7 +84,7 @@ export class ExcalidrawController {
                   // Font family: Code
                   currentItemFontFamily: 3,
                 }}}
-                excalidrawAPI={(api) => this.api = api}
+                excalidrawAPI={(api) => this.resolve_api(api)}
               >
                 <MainMenu>
                   <MainMenu.DefaultItems.LoadScene />

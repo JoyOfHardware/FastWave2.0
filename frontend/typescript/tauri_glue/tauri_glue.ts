@@ -1,17 +1,25 @@
 // @TODO use TS and Tauri bindgens to make this code properly typed
 
-import { core } from '@tauri-apps/api'
+import { core, event } from '@tauri-apps/api'
 
 const invoke = core.invoke;
+const listen = event.listen;
 
 type Filename = string;
 type JavascriptCode = string;
 type WellenHierarchy = unknown;
 type Timeline = unknown;
 type VarFormat = unknown;
+
 type AddedDecodersCount = number;
 type RemovedDecodersCount = number;
 type DecoderPath = string;
+
+type AddedDiagramConnectorsCount = number;
+type RemovedDiagramConnectorsCount = number;
+type DiagramConnectorPath = string;
+type DiagramConnectorName = string;
+type ComponentId = string;
 
 export async function show_window(): Promise<void> {
     return await invoke("show_window");
@@ -57,4 +65,20 @@ export async function add_decoders(decoder_paths: Array<DecoderPath>): Promise<A
 
 export async function remove_all_decoders(): Promise<RemovedDecodersCount> {
     return await invoke("remove_all_decoders");
+}
+
+export async function add_diagram_connectors(diagram_connector_paths: Array<DiagramConnectorPath>): Promise<AddedDiagramConnectorsCount> {
+    return await invoke("add_diagram_connectors", { diagram_connector_paths });
+}
+
+export async function remove_all_diagram_connectors(): Promise<RemovedDiagramConnectorsCount> {
+    return await invoke("remove_all_diagram_connectors");
+}
+
+export async function listen_diagram_connectors_messages(on_message: (message: any) => void) {
+    return await listen("diagram_connector_message", (message) => on_message(message.payload));
+}
+
+export async function notify_diagram_connector_text_change(diagram_connector: DiagramConnectorName, component_id: ComponentId, text: string): Promise<void> {
+    return await invoke("notify_diagram_connector_text_change", { diagram_connector, component_id, text });
 }

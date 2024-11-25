@@ -136,3 +136,33 @@ pub(super) async fn remove_all_decoders() -> super::RemovedDecodersCount {
     eprintln!("Removing decoders is not supported in the browser.");
     0
 }
+
+pub(super) async fn add_diagram_connectors(
+    diagram_connector_paths: Vec<super::DecoderPath>,
+) -> super::AddedDecodersCount {
+    // @TODO error message for user
+    eprintln!("Adding diagram connectors is not supported in the browser.");
+    0
+}
+
+pub(super) async fn remove_all_diagram_connectors() -> super::RemovedDiagramConnectorsCount {
+    // @TODO error message for user
+    eprintln!("Removing diagram connectors is not supported in the browser.");
+    0
+}
+
+pub async fn listen_diagram_connectors_messages(
+    on_message: impl FnMut(DiagramConnectorMessage) + 'static,
+) {
+    // @TODO error message for user
+    eprintln!("Removing listen for diagram connectors messages is not supported in the browser.");
+}
+
+pub async fn notify_diagram_connector_text_change(
+    diagram_connector: DiagramConnectorName,
+    component_id: ComponentId,
+    text: String,
+) {
+    // @TODO error message for user
+    eprintln!("Diagram connectors notifications are not supported in the browser.");
+}

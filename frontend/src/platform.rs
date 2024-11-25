@@ -4,6 +4,7 @@
 // NOTE: `FASTWAVE_PLATFORM` is set in `Makefile.toml` tasks and then in `build.rs`
 
 use crate::STORE;
+use shared::DiagramConnectorMessage;
 
 #[cfg(FASTWAVE_PLATFORM = "TAURI")]
 mod tauri;
@@ -17,9 +18,16 @@ use browser as platform;
 
 type Filename = String;
 type JavascriptCode = String;
+
 type AddedDecodersCount = usize;
 type RemovedDecodersCount = usize;
 type DecoderPath = String;
+
+type AddedDiagramConnectorsCount = usize;
+type RemovedDiagramConnectorsCount = usize;
+type DiagramConnectorPath = String;
+type DiagramConnectorName = String;
+type ComponentId = String;
 
 pub async fn show_window() {
     platform::show_window().await
@@ -84,4 +92,30 @@ async fn redraw_all_timeline_rows() {
     if let Some(controller) = STORE.pixi_canvas_controller.get_cloned().get_cloned() {
         controller.redraw_all_rows().await
     }
+}
+
+pub async fn add_diagram_connectors(
+    diagram_connector_paths: Vec<DecoderPath>,
+) -> AddedDecodersCount {
+    let count = platform::add_diagram_connectors(diagram_connector_paths).await;
+    count
+}
+
+pub async fn remove_all_diagram_connectors() -> RemovedDecodersCount {
+    let count = platform::remove_all_diagram_connectors().await;
+    count
+}
+
+pub async fn listen_diagram_connectors_messages(
+    on_message: impl FnMut(DiagramConnectorMessage) + 'static,
+) {
+    platform::listen_diagram_connectors_messages(on_message).await;
+}
+
+pub async fn notify_diagram_connector_text_change(
+    diagram_connector: DiagramConnectorName,
+    component_id: ComponentId,
+    text: String,
+) {
+    platform::notify_diagram_connector_text_change(diagram_connector, component_id, text).await;
 }

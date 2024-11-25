@@ -1,20 +1,32 @@
+use once_cell::sync::Lazy;
 use std::fs;
-use tauri::async_runtime::RwLock;
+use std::sync::{Arc, RwLock as StdRwLock};
+use tauri::{async_runtime::RwLock, AppHandle};
 use tauri_plugin_dialog::DialogExt;
 use wasmtime::AsContextMut;
 use wellen::simple::Waveform;
 
 type Filename = String;
 type JavascriptCode = String;
+
 type AddedDecodersCount = usize;
 type RemovedDecodersCount = usize;
 type DecoderPath = String;
 
+type AddedDiagramConnectorsCount = usize;
+type RemovedDiagramConnectorsCount = usize;
+type DiagramConnectorPath = String;
+type DiagramConnectorName = String;
+type ComponentId = String;
+
 mod component_manager;
+
+pub static APP_HANDLE: Lazy<Arc<StdRwLock<Option<AppHandle>>>> = Lazy::new(<_>::default);
+pub static WAVEFORM: Lazy<StdRwLock<Arc<RwLock<Option<Waveform>>>>> = Lazy::new(<_>::default);
 
 #[derive(Default)]
 struct Store {
-    waveform: RwLock<Option<Waveform>>,
+    waveform: Arc<RwLock<Option<Waveform>>>,
 }
 
 #[tauri::command(rename_all = "snake_case")]
@@ -37,6 +49,7 @@ async fn pick_and_load_waveform(
         panic!("Waveform file reading failed")
     };
     *store.waveform.write().await = Some(waveform);
+    *WAVEFORM.write().unwrap() = Arc::clone(&store.waveform);
     Ok(Some(file_response.name.unwrap()))
 }
 
@@ -92,8 +105,8 @@ async fn load_signal_and_get_timeline(
                 // @TODO Workaround? Is it a problem only for non-Rust components? Is it needed only when there is a problem in the component (e.g. "`Err` value: wasm trap: cannot enter component instance"?)
                 // let value = std::thread::spawn(move || {
                 // futures::executor::block_on(async move {
-                let decoders = component_manager::DECODERS.read().await;
-                let mut store_lock = component_manager::STORE.lock().await;
+                let decoders = component_manager::decoders::DECODERS.read().await;
+                let mut store_lock = component_manager::decoders::STORE.lock().await;
                 let mut store = store_lock.as_context_mut();
 
                 for decoder in decoders.iter() {
@@ -127,12 +140,43 @@ async fn unload_signal(signal_ref_index: usize, store: tauri::State<'_, Store>) 
 
 #[tauri::command(rename_all = "snake_case")]
 async fn add_decoders(decoder_paths: Vec<DecoderPath>) -> Result<AddedDecodersCount, ()> {
-    Ok(component_manager::add_decoders(decoder_paths).await)
+    Ok(component_manager::decoders::add_decoders(decoder_paths).await)
 }
 
 #[tauri::command(rename_all = "snake_case")]
 async fn remove_all_decoders() -> Result<RemovedDecodersCount, ()> {
-    Ok(component_manager::remove_all_decoders().await)
+    Ok(component_manager::decoders::remove_all_decoders().await)
+}
+
+#[tauri::command(rename_all = "snake_case")]
+async fn add_diagram_connectors(
+    diagram_connector_paths: Vec<DiagramConnectorPath>,
+) -> Result<AddedDiagramConnectorsCount, ()> {
+    Ok(
+        component_manager::diagram_connectors::add_diagram_connectors(diagram_connector_paths)
+            .await,
+    )
+}
+
+#[tauri::command(rename_all = "snake_case")]
+async fn remove_all_diagram_connectors() -> Result<RemovedDiagramConnectorsCount, ()> {
+    Ok(component_manager::diagram_connectors::remove_all_diagram_connectors().await)
+}
+
+#[tauri::command(rename_all = "snake_case")]
+async fn notify_diagram_connector_text_change(
+    diagram_connector: DiagramConnectorName,
+    component_id: ComponentId,
+    text: String,
+) -> Result<(), ()> {
+    Ok(
+        component_manager::diagram_connectors::notify_diagram_connector_text_change(
+            diagram_connector,
+            component_id,
+            text,
+        )
+        .await,
+    )
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -145,7 +189,7 @@ pub fn run() {
         .manage(Store::default())
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .plugin(tauri_plugin_dialog::init())
-        // Npte: Add all handlers to `frontend/src/tauri_bridge.rs`
+        // Note: Add all handlers to `frontend/src/tauri_bridge.rs`
         .invoke_handler(tauri::generate_handler![
             show_window,
             pick_and_load_waveform,
@@ -155,7 +199,14 @@ pub fn run() {
             unload_signal,
             add_decoders,
             remove_all_decoders,
+            add_diagram_connectors,
+            remove_all_diagram_connectors,
+            notify_diagram_connector_text_change,
         ])
+        .setup(|app| {
+            *APP_HANDLE.write().unwrap() = Some(app.handle().to_owned());
+            Ok(())
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

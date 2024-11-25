@@ -4239,6 +4239,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "rust_diagram_connector"
+version = "0.1.0"
+dependencies = [
+ "wit-bindgen-rt",
+]
+
+[[package]]
 name = "rustc-demangle"
 version = "0.1.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"

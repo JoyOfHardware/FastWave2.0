@@ -1,0 +1,19 @@
+package component:diagram-connector;
+
+interface host {
+    log: func(message: string);
+    listen-for-component-text-changes: func(diagram-connect-name: string, component-id: string);
+    set-component-text: func(component-id: string, text: string);
+    address-and-way: func(time-text: string) -> result<tuple<string, option<u32>>>;
+}
+
+interface diagram-connector {
+    init: func();
+    name: func() -> string;
+    on-component-text-changed: func(component-id: string, text: string);
+}
+
+world component {
+    import host;
+    export diagram-connector;
+}
