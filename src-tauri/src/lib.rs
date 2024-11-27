@@ -1,6 +1,8 @@
 use once_cell::sync::Lazy;
 use std::fs;
+use std::process::Command;
 use std::sync::{Arc, RwLock as StdRwLock};
+use std::time::Duration;
 use tauri::{async_runtime::RwLock, AppHandle};
 use tauri_plugin_dialog::DialogExt;
 use wasmtime::AsContextMut;
@@ -179,6 +181,60 @@ async fn notify_diagram_connector_text_change(
     )
 }
 
+#[tauri::command(rename_all = "snake_case")]
+async fn open_konata_file(app: tauri::AppHandle) {
+    let Some(file_response) = app.dialog().file().blocking_pick_file() else {
+        return;
+    };
+    let file_path = file_response.path.into_os_string().into_string().unwrap();
+
+    spawn_konata_app();
+
+    let port = 30000;
+    let base_url = format!("http://localhost:{port}");
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(30))
+        .build()
+        .unwrap();
+    if client
+        .get(format!("{base_url}/status"))
+        .send()
+        .await
+        .is_ok()
+    {
+        client
+            .post(format!("{base_url}/open-konata-file"))
+            .json(&serde_json::json!({
+                "file_path": file_path
+            }))
+            .send()
+            .await
+            .unwrap()
+            .error_for_status()
+            .unwrap();
+    } else {
+        println!("Failed to get Konata server status");
+    }
+}
+
+#[cfg(target_family = "windows")]
+fn spawn_konata_app() {
+    Command::new("cscript")
+        .current_dir("../../konata")
+        .arg("konata.vbs")
+        .spawn()
+        .unwrap();
+}
+
+#[cfg(target_family = "unix")]
+fn spawn_konata_app() {
+    Command::new("sh")
+        .current_dir("../../konata")
+        .arg("konata.sh")
+        .spawn()
+        .unwrap();
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     // https://github.com/tauri-apps/tauri/issues/8462
@@ -202,6 +258,7 @@ pub fn run() {
             add_diagram_connectors,
             remove_all_diagram_connectors,
             notify_diagram_connector_text_change,
+            open_konata_file,
         ])
         .setup(|app| {
             *APP_HANDLE.write().unwrap() = Some(app.handle().to_owned());

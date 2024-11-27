@@ -166,3 +166,8 @@ pub async fn notify_diagram_connector_text_change(
     // @TODO error message for user
     eprintln!("Diagram connectors notifications are not supported in the browser.");
 }
+
+pub async fn open_konata_file() {
+    // @TODO error message for user
+    eprintln!("Opening Konata files is not supported in the browser.");
+}

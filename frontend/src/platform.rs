@@ -119,3 +119,7 @@ pub async fn notify_diagram_connector_text_change(
 ) {
     platform::notify_diagram_connector_text_change(diagram_connector, component_id, text).await;
 }
+
+pub async fn open_konata_file() {
+    platform::open_konata_file().await;
+}

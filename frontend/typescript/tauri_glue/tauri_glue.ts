@@ -82,3 +82,7 @@ export async function listen_diagram_connectors_messages(on_message: (message: a
 export async function notify_diagram_connector_text_change(diagram_connector: DiagramConnectorName, component_id: ComponentId, text: string): Promise<void> {
     return await invoke("notify_diagram_connector_text_change", { diagram_connector, component_id, text });
 }
+
+export async function open_konata_file() {
+    return await invoke("open_konata_file");
+}
