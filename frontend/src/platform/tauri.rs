@@ -107,6 +107,10 @@ pub(super) async fn notify_diagram_connector_text_change(
         .unwrap_throw();
 }
 
+pub(super) async fn open_konata_file() {
+    tauri_glue::open_konata_file().await;
+}
+
 mod tauri_glue {
     use zoon::*;
 
@@ -162,5 +166,7 @@ mod tauri_glue {
             component_id: super::super::ComponentId,
             text: String,
         ) -> Result<(), JsValue>;
+
+        pub async fn open_konata_file();
     }
 }
