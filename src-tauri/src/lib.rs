@@ -5,6 +5,7 @@ use std::sync::{Arc, RwLock as StdRwLock};
 use std::time::Duration;
 use tauri::{async_runtime::RwLock, AppHandle};
 use tauri_plugin_dialog::DialogExt;
+use tokio::time::sleep;
 use wasmtime::AsContextMut;
 use wellen::simple::Waveform;
 
@@ -188,39 +189,56 @@ async fn open_konata_file(app: tauri::AppHandle) {
     };
     let file_path = file_response.path.into_os_string().into_string().unwrap();
 
-    spawn_konata_app();
-
     let port = 30000;
     let base_url = format!("http://localhost:{port}");
     let client = reqwest::Client::builder()
-        .timeout(Duration::from_secs(30))
+        .connect_timeout(Duration::from_secs(1))
         .build()
         .unwrap();
-    if client
-        .get(format!("{base_url}/status"))
-        .send()
-        .await
-        .is_ok()
-    {
+
+    let mut konata_server_ready = false;
+
+    let is_konata_server_ready = || async {
         client
-            .post(format!("{base_url}/open-konata-file"))
-            .json(&serde_json::json!({
-                "file_path": file_path
-            }))
+            .get(format!("{base_url}/status"))
             .send()
             .await
-            .unwrap()
-            .error_for_status()
-            .unwrap();
+            .is_ok()
+    };
+
+    if is_konata_server_ready().await {
+        konata_server_ready = true;
     } else {
-        println!("Failed to get Konata server status");
+        spawn_konata_app();
     }
+
+    let mut attempts = 1;
+    while !konata_server_ready {
+        attempts += 1;
+        if attempts > 5 {
+            eprintln!("Failed to get Konata server status (5 attempts)");
+            return;
+        }
+        konata_server_ready = is_konata_server_ready().await;
+        sleep(Duration::from_secs(1)).await;
+    }
+
+    client
+        .post(format!("{base_url}/open-konata-file"))
+        .json(&serde_json::json!({
+            "file_path": file_path
+        }))
+        .send()
+        .await
+        .unwrap()
+        .error_for_status()
+        .unwrap();
 }
 
 #[cfg(target_family = "windows")]
 fn spawn_konata_app() {
     Command::new("cscript")
-        .current_dir("../../konata")
+        .current_dir("../../Konata")
         .arg("konata.vbs")
         .spawn()
         .unwrap();
@@ -229,7 +247,7 @@ fn spawn_konata_app() {
 #[cfg(target_family = "unix")]
 fn spawn_konata_app() {
     Command::new("sh")
-        .current_dir("../../konata")
+        .current_dir("../../Konata")
         .arg("konata.sh")
         .spawn()
         .unwrap();
