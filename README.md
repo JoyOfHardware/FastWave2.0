@@ -69,6 +69,16 @@
   <img width="800" src="docs/video_diagrams.gif" alt="Fastwave - Diagrams" />
 </p>
 
+<p align="center">Diagram Connector Demo</p> 
+<p align="center">
+  <img width="800" src="docs/video_diagram_connector.gif" alt="Fastwave - Diagram Connector demo" />
+</p>
+
+<p align="center">Diagram Connector Code snippet</p>
+<p align="center">
+  <img width="500" src="docs/screenshot_diagram_connector_rs.png" alt="Fastwave - Diagram Connector Code snippet" />
+</p>
+
 ---
 
 ### Installation (desktop version):
