@@ -6,7 +6,7 @@ use once_cell::sync::Lazy;
 use shared::{DiagramConnectorMessage, VarFormat};
 use std::sync::Arc;
 use tauri::async_runtime::{Mutex, RwLock};
-use tauri::Manager;
+use tauri::Emitter;
 use wasmtime::component::{Component as WasmtimeComponent, *};
 use wasmtime::{AsContextMut, Engine, Store};
 use wasmtime_wasi::{WasiCtx, WasiView};

@@ -42,27 +42,30 @@ async fn pick_and_load_waveform(
     store: tauri::State<'_, Store>,
     app: tauri::AppHandle,
 ) -> Result<Option<Filename>, ()> {
-    let Some(file_response) = app.dialog().file().blocking_pick_file() else {
+    let Some(file_path) = app.dialog().file().blocking_pick_file() else {
         return Ok(None);
     };
-    let file_path = file_response.path.as_os_str().to_str().unwrap();
+    let file_buf = file_path.into_path().unwrap();
+    let file_str = file_buf.as_os_str().to_str().unwrap();
     // @TODO `read` should accept `Path` instead of `&str`
-    let waveform = wellen::simple::read(file_path);
+    let waveform = wellen::simple::read(file_str);
     let Ok(waveform) = waveform else {
         panic!("Waveform file reading failed")
     };
     *store.waveform.write().await = Some(waveform);
     *WAVEFORM.write().unwrap() = Arc::clone(&store.waveform);
-    Ok(Some(file_response.name.unwrap()))
+    Ok(Some(
+        file_buf.file_name().unwrap().to_string_lossy().to_string(),
+    ))
 }
 
 #[tauri::command(rename_all = "snake_case")]
 async fn load_file_with_selected_vars(app: tauri::AppHandle) -> Result<Option<JavascriptCode>, ()> {
-    let Some(file_response) = app.dialog().file().blocking_pick_file() else {
+    let Some(file_path) = app.dialog().file().blocking_pick_file() else {
         return Ok(None);
     };
     // @TODO Tokio's `fs` or a Tauri `fs`?
-    let Ok(javascript_code) = fs::read_to_string(file_response.path) else {
+    let Ok(javascript_code) = fs::read_to_string(file_path.into_path().unwrap()) else {
         panic!("Selected vars file reading failed")
     };
     Ok(Some(javascript_code))
@@ -184,10 +187,15 @@ async fn notify_diagram_connector_text_change(
 
 #[tauri::command(rename_all = "snake_case")]
 async fn open_konata_file(app: tauri::AppHandle) {
-    let Some(file_response) = app.dialog().file().blocking_pick_file() else {
+    let Some(file_path) = app.dialog().file().blocking_pick_file() else {
         return;
     };
-    let file_path = file_response.path.into_os_string().into_string().unwrap();
+    let file_str = file_path
+        .into_path()
+        .unwrap()
+        .into_os_string()
+        .into_string()
+        .unwrap();
 
     let port = 30000;
     let base_url = format!("http://localhost:{port}");
@@ -226,7 +234,7 @@ async fn open_konata_file(app: tauri::AppHandle) {
     client
         .post(format!("{base_url}/open-konata-file"))
         .json(&serde_json::json!({
-            "file_path": file_path
+            "file_path": file_str
         }))
         .send()
         .await
