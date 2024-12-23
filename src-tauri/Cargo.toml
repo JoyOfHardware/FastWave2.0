@@ -17,6 +17,7 @@ tauri-build = { version = "2.0.3", features = [] }
 
 [dependencies]
 wellen.workspace = true
+alacritty_terminal = { git = "https://github.com/alacritty/alacritty", rev = "cacdb5bb3b72bad2c729227537979d95af75978f" }
 shared = { path = "../shared", features = ["backend"] }
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }

@@ -8,6 +8,7 @@ use tauri_plugin_dialog::DialogExt;
 use tokio::time::sleep;
 use wasmtime::AsContextMut;
 use wellen::simple::Waveform;
+use tauri::Emitter;
 
 type Filename = String;
 type JavascriptCode = String;
@@ -30,6 +31,7 @@ pub static WAVEFORM: Lazy<StdRwLock<Arc<RwLock<Option<Waveform>>>>> = Lazy::new(
 #[derive(Default)]
 struct Store {
     waveform: Arc<RwLock<Option<Waveform>>>,
+    val     : Arc<RwLock<bool>>,
 }
 
 #[tauri::command(rename_all = "snake_case")]
@@ -288,6 +290,19 @@ pub fn run() {
         ])
         .setup(|app| {
             *APP_HANDLE.write().unwrap() = Some(app.handle().to_owned());
+            println!("Setting up yay!");
+
+            std::thread::spawn(move || {
+                // Simulate emitting a message after a delay
+                std::thread::sleep(std::time::Duration::from_secs(5));
+
+                // Use APP_HANDLE to emit the event
+                if let Some(app_handle) = APP_HANDLE.read().unwrap().clone() {
+                    let payload = serde_json::json!({ "message": "Hello from the backend using APP_HANDLE!" });
+                    app_handle.emit("backend-message", payload).unwrap();
+                }
+            });
+
             Ok(())
         })
         .run(tauri::generate_context!())

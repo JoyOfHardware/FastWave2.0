@@ -7,6 +7,7 @@ mod signal_to_timeline;
 pub use signal_to_timeline::signal_to_timeline;
 
 pub mod wellen_helpers;
+pub mod term;
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 #[serde(crate = "serde")]

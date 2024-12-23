@@ -1,4 +1,5 @@
 use shared::DiagramConnectorMessage;
+use term::TERM_OPEN;
 use std::{mem, sync::Arc};
 use zoon::*;
 
@@ -22,6 +23,8 @@ use command_panel::CommandPanel;
 
 pub mod theme;
 use theme::*;
+
+pub mod term;
 
 #[derive(Clone, Copy, Default)]
 enum Layout {
@@ -181,4 +184,15 @@ fn root() -> impl Element {
             }
         })))
         .item(CommandPanel::new())
+        .item_signal(
+            TERM_OPEN.signal_cloned().map(
+                |term_open| {
+                    match term_open {
+                        true => {El::new().child("Terminal")}
+                        false => {El::new().child("")}
+                    }
+                }
+            )
+            // El::new()
+        )
 }
