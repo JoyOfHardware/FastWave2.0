@@ -71,7 +71,7 @@ fn send_char(
             let send_c = c.clone();
             Task::start(async move {
                 println!("Sending char: {}", &c);
-                crate::platform::send_char().await;
+                crate::platform::send_char(send_c.to_string()).await;
                 // crate::platform::unload_signal().await;
                 println!("Sent char: {}", &c);
             });

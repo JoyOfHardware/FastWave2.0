@@ -74,8 +74,8 @@ pub async fn unload_signal(signal_ref: wellen::SignalRef) {
     platform::unload_signal(signal_ref).await
 }
 
-pub async fn send_char() {
-    platform::send_char().await
+pub async fn send_char(c : String) {
+    platform::send_char(c).await
 }
 
 pub async fn add_decoders(decoder_paths: Vec<DecoderPath>) -> AddedDecodersCount {

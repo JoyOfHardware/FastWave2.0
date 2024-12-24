@@ -58,8 +58,8 @@ pub(super) async fn unload_signal(signal_ref: wellen::SignalRef) {
         .unwrap_throw()
 }
 
-pub(super) async fn send_char() {
-    tauri_glue::send_char()
+pub(super) async fn send_char(c : String) {
+    tauri_glue::send_char(c)
         .await
         .unwrap_throw()
 }
@@ -158,7 +158,7 @@ mod tauri_glue {
         pub async fn unload_signal(signal_ref_index: usize) -> Result<(), JsValue>;
 
         #[wasm_bindgen(catch)]
-        pub async fn send_char() -> Result<(), JsValue>;
+        pub async fn send_char(c : String) -> Result<(), JsValue>;
 
         #[wasm_bindgen(catch)]
         pub async fn add_decoders(

@@ -59,9 +59,8 @@ export async function unload_signal(signal_ref_index: number): Promise<void> {
     return await invoke("unload_signal", { signal_ref_index });
 }
 
-export async function send_char(): Promise<void> {
-    const char = "a";
-    return await invoke("send_char", { char });
+export async function send_char(c : string): Promise<void> {
+    return await invoke("send_char", { c });
 }
 
 export async function add_decoders(decoder_paths: Array<DecoderPath>): Promise<AddedDecodersCount> {
