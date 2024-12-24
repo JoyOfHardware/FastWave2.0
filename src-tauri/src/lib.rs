@@ -24,9 +24,16 @@ type DiagramConnectorName = String;
 type ComponentId = String;
 
 mod component_manager;
+mod aterm;
+mod terminal_size;
+use std::sync::Mutex;
 
 pub static APP_HANDLE: Lazy<Arc<StdRwLock<Option<AppHandle>>>> = Lazy::new(<_>::default);
 pub static WAVEFORM: Lazy<StdRwLock<Arc<RwLock<Option<Waveform>>>>> = Lazy::new(<_>::default);
+
+static TERM: Lazy<Mutex<aterm::ATerm>> = Lazy::new(|| {
+    Mutex::new(aterm::ATerm::new().expect("Failed to initialize ATerm"))
+});
 
 #[derive(Default)]
 struct Store {
@@ -143,6 +150,12 @@ async fn unload_signal(signal_ref_index: usize, store: tauri::State<'_, Store>) 
     let mut waveform_lock = store.waveform.write().await;
     let waveform = waveform_lock.as_mut().unwrap();
     waveform.unload_signals(&[signal_ref]);
+    Ok(())
+}
+
+#[tauri::command(rename_all = "snake_case")]
+async fn send_char() -> Result<(), ()> {
+    println!("Sending char: {}", "a");
     Ok(())
 }
 
@@ -281,6 +294,7 @@ pub fn run() {
             get_hierarchy,
             load_signal_and_get_timeline,
             unload_signal,
+            send_char,
             add_decoders,
             remove_all_decoders,
             add_diagram_connectors,

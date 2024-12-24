@@ -19,7 +19,7 @@ pub enum TerminalDownMsg {
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 #[serde(crate = "serde")]
 pub struct TerminalScreen {
-    pub cols    : usize,
-    pub rows    : usize,
+    pub cols    : u16,
+    pub rows    : u16,
     pub content : String,
 }

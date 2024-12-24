@@ -8,23 +8,10 @@ use shared::term::{TerminalDownMsg, TerminalScreen, TerminalUpMsg};
 // use tokio::time::timeout;
 pub static TERM_OPEN: Lazy<Mutable<bool>> = Lazy::new(|| {false.into()});
 
-static  TERMINAL_STATE: Lazy<Mutable<TerminalDownMsg>> =
+pub static  TERMINAL_STATE: Lazy<Mutable<TerminalDownMsg>> =
     Lazy::new(|| {
         Mutable::new(TerminalDownMsg::TermNotStarted)
     });
-
-// static CONNECTION: Lazy<Connection<UpMsg, DownMsg>> = Lazy::new(|| {
-//     Connection::new(
-//         |down_msg, _| {
-//             match down_msg {
-//                 DownMsg::TerminalDownMsg(terminal_msg) => {
-//                     TERMINAL_STATE.set(terminal_msg);
-//                 }
-
-//             }
-//         }
-//     )
-// });
 
 pub fn root() -> impl Element {
     term_request();
@@ -39,7 +26,6 @@ pub fn root() -> impl Element {
                 ]))
             .update_raw_el(|raw_el| {
                 raw_el.global_event_handler(|event: events::KeyDown| {
-                    println!("Pressed key: {}", &event.key());
                     send_char(
                         (&event).key().as_str(),
                         (&event).ctrl_key(),
@@ -82,7 +68,13 @@ fn send_char(
     match process_str(s, has_control) {
         // TODO : fill this out
         Some(c) => {
-            eprintln!("Sending char: {}", c);
+            let send_c = c.clone();
+            Task::start(async move {
+                println!("Sending char: {}", &c);
+                crate::platform::send_char().await;
+                // crate::platform::unload_signal().await;
+                println!("Sent char: {}", &c);
+            });
         }
         None => {eprintln!("Not processing: {}", s)}
     }
@@ -94,7 +86,7 @@ fn make_grid_with_newlines(term : &TerminalScreen) -> String {
     let mut formatted = String::new();
     for (i, c) in term.content.chars().enumerate() {
         formatted.push(c);
-        if (i + 1) % term.cols == 0 {
+        if ((i + 1) as u16) % term.cols == 0 {
             formatted.push('\n');
         }
     }

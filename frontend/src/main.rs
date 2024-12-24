@@ -25,6 +25,7 @@ pub mod theme;
 use theme::*;
 
 pub mod term;
+use shared::term::{TerminalDownMsg, TerminalScreen};
 
 #[derive(Clone, Copy, Default)]
 enum Layout {
@@ -101,8 +102,11 @@ fn main() {
                     .unwrap_throw()
                     .set_component_text(&component_id, &text),
             }
-        })
-        .await
+        }).await;
+        platform::listen_term_update(|down_msg| {
+            term::TERMINAL_STATE.set(down_msg);
+        }).await;
+        zoon::println!("Printing on line 106");
     });
 }
 
@@ -188,11 +192,15 @@ fn root() -> impl Element {
             TERM_OPEN.signal_cloned().map(
                 |term_open| {
                     match term_open {
-                        true => {El::new().child("Terminal")}
-                        false => {El::new().child("")}
+                        true =>
+                            El::new()
+                                .s(Height::fill().max(450))
+                                .child(term::root()),
+                        false =>
+                            El::new()
+                                .child("")
                     }
                 }
             )
-            // El::new()
         )
 }

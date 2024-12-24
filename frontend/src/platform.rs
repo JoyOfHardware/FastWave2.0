@@ -29,6 +29,8 @@ type DiagramConnectorPath = String;
 type DiagramConnectorName = String;
 type ComponentId = String;
 
+use shared::term::{TerminalDownMsg, TerminalScreen};
+
 pub async fn show_window() {
     platform::show_window().await
 }
@@ -72,6 +74,10 @@ pub async fn unload_signal(signal_ref: wellen::SignalRef) {
     platform::unload_signal(signal_ref).await
 }
 
+pub async fn send_char() {
+    platform::send_char().await
+}
+
 pub async fn add_decoders(decoder_paths: Vec<DecoderPath>) -> AddedDecodersCount {
     let count = platform::add_decoders(decoder_paths).await;
     if count > 0 {
@@ -110,6 +116,12 @@ pub async fn listen_diagram_connectors_messages(
     on_message: impl FnMut(DiagramConnectorMessage) + 'static,
 ) {
     platform::listen_diagram_connectors_messages(on_message).await;
+}
+
+pub async fn listen_term_update(
+    on_message: impl FnMut(TerminalDownMsg) + 'static,
+) {
+    platform::listen_term_update(on_message).await;
 }
 
 pub async fn notify_diagram_connector_text_change(
