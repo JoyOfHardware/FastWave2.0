@@ -38,7 +38,7 @@ pub struct ATerm {
 
 impl ATerm {
     pub fn new() -> result::Result<ATerm, std::io::Error> {
-        let (rows, cols) = (21, 158);
+        let (rows, cols) = (21, 90);
         let id = 1;
         let pty_config = tty::Options {
             shell: Some(tty::Shell::new("/bin/bash".to_string(), vec![])),

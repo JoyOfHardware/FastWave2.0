@@ -22,6 +22,7 @@ type RemovedDiagramConnectorsCount = usize;
 type DiagramConnectorPath = String;
 type DiagramConnectorName = String;
 type ComponentId = String;
+use alacritty_terminal::event::Notify;
 
 mod component_manager;
 mod aterm;
@@ -154,9 +155,15 @@ async fn unload_signal(signal_ref_index: usize, store: tauri::State<'_, Store>) 
 }
 
 #[tauri::command(rename_all = "snake_case")]
-async fn send_char() -> Result<(), ()> {
-    println!("Sending char: {}", "a");
-    Ok(())
+async fn send_char(c : String) -> Result<(), ()> {
+    // see if length of c is 1
+    if c.len() == 1 {
+        let term = TERM.lock().unwrap();
+        term.tx.notify(c.into_bytes());
+        Ok(())
+    } else {
+        Err(())
+    }
 }
 
 #[tauri::command(rename_all = "snake_case")]
