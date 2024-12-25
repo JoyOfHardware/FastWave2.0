@@ -194,7 +194,8 @@ fn root() -> impl Element {
                     match term_open {
                         true =>
                             El::new()
-                                .s(Height::fill().max(450))
+                                .s(Height::fill().max(400).min(400))
+                                .s(Padding::all(5))
                                 .child(term::root()),
                         false =>
                             El::new()

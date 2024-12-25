@@ -23,6 +23,7 @@ type DiagramConnectorPath = String;
 type DiagramConnectorName = String;
 type ComponentId = String;
 use alacritty_terminal::event::Notify;
+use shared::term::{TerminalDownMsg, TerminalScreen};
 
 mod component_manager;
 mod aterm;
@@ -156,7 +157,6 @@ async fn unload_signal(signal_ref_index: usize, store: tauri::State<'_, Store>) 
 
 #[tauri::command(rename_all = "snake_case")]
 async fn send_char(c : String) -> Result<(), ()> {
-    // see if length of c is 1
     if c.len() == 1 {
         let term = TERM.lock().unwrap();
         term.tx.notify(c.into_bytes());
@@ -315,12 +315,20 @@ pub fn run() {
 
             std::thread::spawn(move || {
                 // Simulate emitting a message after a delay
-                std::thread::sleep(std::time::Duration::from_secs(5));
+                std::thread::sleep(std::time::Duration::from_secs(1));
 
-                // Use APP_HANDLE to emit the event
-                if let Some(app_handle) = APP_HANDLE.read().unwrap().clone() {
-                    let payload = serde_json::json!({ "message": "Hello from the backend using APP_HANDLE!" });
-                    app_handle.emit("backend-message", payload).unwrap();
+                //tart term and send initial update to backend
+                if let Some(app_handle) = crate::APP_HANDLE.read().unwrap().clone() {
+                    let term = crate::TERM.lock().unwrap();
+                    let content = crate::aterm::terminal_instance_to_string(&term);
+                    let payload = TerminalScreen {
+                        cols: term.cols,
+                        rows: term.rows,
+                        content: content
+                    };
+                    let payload = TerminalDownMsg::FullTermUpdate(payload);
+                    let payload = serde_json::json!(payload);
+                    app_handle.emit("term_content", payload).unwrap();
                 }
             });
 

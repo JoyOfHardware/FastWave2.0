@@ -23,8 +23,8 @@ impl EventListener for EventProxy {
 pub struct ATerm {
     pub term: Arc<FairMutex<Term<EventProxy>>>,
 
-    rows : u16,
-    cols : u16,
+    pub rows : u16,
+    pub cols : u16,
 
     /// Use tx to write things to terminal instance from outside world
     pub tx: Notifier,
@@ -38,7 +38,7 @@ pub struct ATerm {
 
 impl ATerm {
     pub fn new() -> result::Result<ATerm, std::io::Error> {
-        let (rows, cols) = (21, 90);
+        let (rows, cols) = (21, 85);
         let id = 1;
         let pty_config = tty::Options {
             shell: Some(tty::Shell::new("/bin/bash".to_string(), vec![])),
@@ -93,7 +93,7 @@ impl ATerm {
     }
 }
 
-fn terminal_instance_to_string(terminal_instance: &ATerm) -> String {
+pub fn terminal_instance_to_string(terminal_instance: &ATerm) -> String {
     let (rows, cols) = (terminal_instance.rows, terminal_instance.cols);
     let term = terminal_instance.term.lock();
     let grid = term.grid().clone();

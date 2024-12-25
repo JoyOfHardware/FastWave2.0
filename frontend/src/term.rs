@@ -8,6 +8,8 @@ use shared::term::{TerminalDownMsg, TerminalScreen, TerminalUpMsg};
 // use tokio::time::timeout;
 pub static TERM_OPEN: Lazy<Mutable<bool>> = Lazy::new(|| {false.into()});
 
+pub const TERMINAL_COLOR: Oklch = color!("oklch(20% 0.125 262.26)");
+
 pub static  TERMINAL_STATE: Lazy<Mutable<TerminalDownMsg>> =
     Lazy::new(|| {
         Mutable::new(TerminalDownMsg::TermNotStarted)
@@ -19,6 +21,8 @@ pub fn root() -> impl Element {
         El::new()
             .s(Width::fill())
             .s(Height::fill())
+            .s(Background::new().color(TERMINAL_COLOR))
+            .s(RoundedCorners::all(7))
             .s(Font::new().family([
                 FontFamily::new("Lucida Console"),
                 FontFamily::new("Courier"),
@@ -66,16 +70,13 @@ fn send_char(
     has_control : bool,
     ) {
     match process_str(s, has_control) {
-        // TODO : fill this out
         Some(c) => {
             let send_c = c.clone();
             Task::start(async move {
-                println!("Sending char: {}", &c);
                 crate::platform::send_char(send_c.to_string()).await;
-                println!("Sent char: {}", &c);
             });
         }
-        None => {eprintln!("Not processing: {}", s)}
+        None => {}
     }
 
 }
