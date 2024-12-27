@@ -93,7 +93,6 @@ fn make_grid_with_newlines(term: &TerminalScreen) -> String {
 
 
 fn process_str(s: &str, has_ctrl: bool) -> Option<char> {
-    println!("process_str: {s}");
     match s {
         "Enter"         => {return Some('\n');}
         "Escape"        => {return Some('\x1B');}
