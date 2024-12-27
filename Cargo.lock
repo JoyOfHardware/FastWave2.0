@@ -1823,6 +1823,7 @@ version = "0.1.0"
 dependencies = [
  "gloo-file",
  "shared",
+ "unicode-segmentation",
  "wasm-bindgen-test",
  "web-sys",
  "wellen",

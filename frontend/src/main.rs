@@ -106,7 +106,6 @@ fn main() {
         platform::listen_term_update(|down_msg| {
             term::TERMINAL_STATE.set(down_msg);
         }).await;
-        zoon::println!("Printing on line 106");
     });
 }
 

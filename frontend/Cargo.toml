@@ -14,6 +14,7 @@ wasm-bindgen-test = "0.3.19"
 unexpected_cfgs = { level = "allow", check-cfg = ['cfg(FASTWAVE_PLATFORM)'] }
 
 [dependencies]
+unicode-segmentation = "1.10"
 zoon.workspace = true
 wellen.workspace = true
 shared = { path = "../shared", features = ["frontend"] }

@@ -4,6 +4,7 @@ use chrono::format;
 use zoon::*;
 use zoon::{println, eprintln, *};
 use shared::term::{TerminalDownMsg, TerminalScreen, TerminalUpMsg};
+use unicode_segmentation::UnicodeSegmentation;
 
 // use tokio::time::timeout;
 pub static TERM_OPEN: Lazy<Mutable<bool>> = Lazy::new(|| {false.into()});
@@ -16,7 +17,6 @@ pub static  TERMINAL_STATE: Lazy<Mutable<TerminalDownMsg>> =
     });
 
 pub fn root() -> impl Element {
-    term_request();
     let terminal =
         El::new()
             .s(Width::fill())
@@ -61,10 +61,6 @@ pub fn root() -> impl Element {
     root
 }
 
-// TODO : fill this out
-fn term_request() {
-}
-
 fn send_char(
     s           : &str,
     has_control : bool,
@@ -82,18 +78,22 @@ fn send_char(
 }
 
 
-fn make_grid_with_newlines(term : &TerminalScreen) -> String {
-    let mut formatted = String::new();
-    for (i, c) in term.content.chars().enumerate() {
+fn make_grid_with_newlines(term: &TerminalScreen) -> String {
+    let mut formatted = String::with_capacity(term.content.len() + (term.content.len() / term.cols as usize));
+
+    term.content.chars().enumerate().for_each(|(i, c)| {
         formatted.push(c);
-        if ((i + 1) as u16) % term.cols == 0 {
+        if (i + 1) as u16 % term.cols == 0 {
             formatted.push('\n');
         }
-    }
+    });
+
     formatted
 }
 
-fn process_str(s: &str, has_ctrl : bool) -> Option<char> {
+
+fn process_str(s: &str, has_ctrl: bool) -> Option<char> {
+    println!("process_str: {s}");
     match s {
         "Enter"         => {return Some('\n');}
         "Escape"        => {return Some('\x1B');}
@@ -102,37 +102,40 @@ fn process_str(s: &str, has_ctrl : bool) -> Option<char> {
         "ArrowDown"     => {return Some('\x0E');}
         "ArrowLeft"     => {return Some('\x02');}
         "ArrowRight"    => {return Some('\x06');}
+        "Control"       => {return None;}
+        "Shift"         => {return None;}
+        "Meta"          => {return None;}
+        "Alt"           => {return None;}
         _ => {}
     }
-    // Check if the string has exactly one character
-    if s.chars().count() == 1 {
-        // Safe unwrap because we know the length is 1
-        let c = s.chars().next().unwrap();
-        let c = process_for_ctrl_char(c, has_ctrl);
-        return Some(c);
+
+    let mut graphemes = s.graphemes(true);
+    let first = graphemes.next();
+
+    if let Some(g) = first {
+        if g.len() == 1 {
+            if let Some(c) = g.chars().next() {
+                let c = process_for_ctrl_char(c, has_ctrl);
+                return Some(c);
+            }
+        }
     }
+
     None
 }
+
+// Helper function to process control characters
 
 fn is_lowercase_alpha(c: char) -> bool {
     char_is_between_inclusive(c, 'a', 'z')
 }
 
-fn process_for_ctrl_char(c: char, has_ctrl : bool) -> char {
-    let mut final_ctrl_char = c;
+fn process_for_ctrl_char(c: char, has_ctrl: bool) -> char {
     if has_ctrl {
-        if is_lowercase_alpha(c) {
-            let c_u8 = (c as u8);
-            let ctrl_char_u8 = c_u8 - 96;
-            final_ctrl_char = (ctrl_char_u8 as char);
-        } else if char_is_between_inclusive(c, '[', '_') {
-            let c_u8 = (c as u8);
-            let ctrl_char_u8 = c_u8 - 90;
-            final_ctrl_char = (ctrl_char_u8 as char);
-        }
-
+        (c as u8 & 0x1F) as char
+    } else {
+        c
     }
-    return final_ctrl_char
 }
 
 fn char_is_between_inclusive(c : char, lo_char : char, hi_char : char) -> bool {
