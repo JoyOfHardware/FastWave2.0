@@ -1,4 +1,5 @@
 use shared::DiagramConnectorMessage;
+use term::TERM_OPEN;
 use std::{mem, sync::Arc};
 use zoon::*;
 
@@ -22,6 +23,9 @@ use command_panel::CommandPanel;
 
 pub mod theme;
 use theme::*;
+
+pub mod term;
+use shared::term::{TerminalDownMsg, TerminalScreen};
 
 #[derive(Clone, Copy, Default)]
 enum Layout {
@@ -98,8 +102,10 @@ fn main() {
                     .unwrap_throw()
                     .set_component_text(&component_id, &text),
             }
-        })
-        .await
+        }).await;
+        platform::listen_term_update(|down_msg| {
+            term::TERMINAL_STATE.set(down_msg);
+        }).await;
     });
 }
 
@@ -181,4 +187,20 @@ fn root() -> impl Element {
             }
         })))
         .item(CommandPanel::new())
+        .item_signal(
+            TERM_OPEN.signal_cloned().map(
+                |term_open| {
+                    match term_open {
+                        true =>
+                            El::new()
+                                .s(Height::fill().max(400).min(400))
+                                .s(Padding::all(5))
+                                .child(term::root()),
+                        false =>
+                            El::new()
+                                .child("")
+                    }
+                }
+            )
+        )
 }

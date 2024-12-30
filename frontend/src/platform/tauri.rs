@@ -1,4 +1,5 @@
 use shared::DiagramConnectorMessage;
+use shared::term::{TerminalDownMsg, TerminalScreen};
 use zoon::*;
 
 pub(super) async fn show_window() {
@@ -57,6 +58,12 @@ pub(super) async fn unload_signal(signal_ref: wellen::SignalRef) {
         .unwrap_throw()
 }
 
+pub(super) async fn send_char(c : String) {
+    tauri_glue::send_char(c)
+        .await
+        .unwrap_throw()
+}
+
 pub(super) async fn add_decoders(
     decoder_paths: Vec<super::DecoderPath>,
 ) -> super::AddedDecodersCount {
@@ -95,6 +102,14 @@ pub(super) async fn listen_diagram_connectors_messages(
     let on_message =
         move |message: JsValue| on_message(serde_wasm_bindgen::from_value(message).unwrap_throw());
     tauri_glue::listen_diagram_connectors_messages(Closure::new(on_message).into_js_value()).await
+}
+
+pub(super) async fn listen_term_update(
+    mut on_message: impl FnMut(TerminalDownMsg) + 'static,
+) {
+    let on_message =
+        move |message: JsValue| on_message(serde_wasm_bindgen::from_value(message).unwrap_throw());
+    tauri_glue::listen_term_update(Closure::new(on_message).into_js_value()).await
 }
 
 pub(super) async fn notify_diagram_connector_text_change(
@@ -143,6 +158,9 @@ mod tauri_glue {
         pub async fn unload_signal(signal_ref_index: usize) -> Result<(), JsValue>;
 
         #[wasm_bindgen(catch)]
+        pub async fn send_char(c : String) -> Result<(), JsValue>;
+
+        #[wasm_bindgen(catch)]
         pub async fn add_decoders(
             decoder_paths: Vec<super::super::DecoderPath>,
         ) -> Result<JsValue, JsValue>;
@@ -159,6 +177,8 @@ mod tauri_glue {
         pub async fn remove_all_diagram_connectors() -> Result<JsValue, JsValue>;
 
         pub async fn listen_diagram_connectors_messages(on_event: JsValue);
+
+        pub async fn listen_term_update(on_event: JsValue);
 
         #[wasm_bindgen(catch)]
         pub async fn notify_diagram_connector_text_change(

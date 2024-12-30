@@ -1,6 +1,7 @@
 use crate::{platform, theme::*, Filename, Layout, Mode};
 use std::sync::Arc;
 use zoon::*;
+use crate::term::TERM_OPEN;
 
 pub struct HeaderPanel {
     hierarchy: Mutable<Option<Arc<wellen::Hierarchy>>>,
@@ -37,6 +38,7 @@ impl HeaderPanel {
                     .item(self.load_button())
                     .item(self.layout_switcher())
                     .item(self.mode_switcher())
+                    .item(self.open_terminal())
                     .item(self.open_konata_file()),
             )
     }
@@ -211,5 +213,27 @@ impl HeaderPanel {
             )
             .on_hovered_change(move |is_hovered| hovered.set_neq(is_hovered))
             .on_press(move || Task::start(platform::open_konata_file()))
+    }
+
+    fn open_terminal(&self) -> impl Element {
+        let (hovered, hovered_signal) = Mutable::new_and_signal(false);
+        Button::new()
+            .s(Padding::new().x(20).y(10))
+            .s(Background::new().color_signal(
+                hovered_signal.map_bool(|| COLOR_MEDIUM_SLATE_BLUE, || COLOR_SLATE_BLUE),
+            ))
+            .s(Align::new().left())
+            .s(RoundedCorners::all(15))
+            .label(
+                El::new()
+                    .s(Font::new().no_wrap())
+                    .child("Open Terminal"),
+            )
+            .on_hovered_change(move |is_hovered| hovered.set_neq(is_hovered))
+            .on_press(move || {
+                let term_open = TERM_OPEN.get();
+                TERM_OPEN.set(!term_open);
+
+            })
     }
 }

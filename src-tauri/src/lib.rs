@@ -8,6 +8,7 @@ use tauri_plugin_dialog::DialogExt;
 use tokio::time::sleep;
 use wasmtime::AsContextMut;
 use wellen::simple::Waveform;
+use tauri::Emitter;
 
 type Filename = String;
 type JavascriptCode = String;
@@ -21,15 +22,25 @@ type RemovedDiagramConnectorsCount = usize;
 type DiagramConnectorPath = String;
 type DiagramConnectorName = String;
 type ComponentId = String;
+use alacritty_terminal::event::Notify;
+use shared::term::{TerminalDownMsg, TerminalScreen};
 
 mod component_manager;
+mod aterm;
+mod terminal_size;
+use std::sync::Mutex;
 
 pub static APP_HANDLE: Lazy<Arc<StdRwLock<Option<AppHandle>>>> = Lazy::new(<_>::default);
 pub static WAVEFORM: Lazy<StdRwLock<Arc<RwLock<Option<Waveform>>>>> = Lazy::new(<_>::default);
 
+static TERM: Lazy<Mutex<aterm::ATerm>> = Lazy::new(|| {
+    Mutex::new(aterm::ATerm::new().expect("Failed to initialize ATerm"))
+});
+
 #[derive(Default)]
 struct Store {
     waveform: Arc<RwLock<Option<Waveform>>>,
+    val     : Arc<RwLock<bool>>,
 }
 
 #[tauri::command(rename_all = "snake_case")]
@@ -142,6 +153,17 @@ async fn unload_signal(signal_ref_index: usize, store: tauri::State<'_, Store>) 
     let waveform = waveform_lock.as_mut().unwrap();
     waveform.unload_signals(&[signal_ref]);
     Ok(())
+}
+
+#[tauri::command(rename_all = "snake_case")]
+async fn send_char(c : String) -> Result<(), ()> {
+    if c.len() == 1 {
+        let term = TERM.lock().unwrap();
+        term.tx.notify(c.into_bytes());
+        Ok(())
+    } else {
+        Err(())
+    }
 }
 
 #[tauri::command(rename_all = "snake_case")]
@@ -279,6 +301,7 @@ pub fn run() {
             get_hierarchy,
             load_signal_and_get_timeline,
             unload_signal,
+            send_char,
             add_decoders,
             remove_all_decoders,
             add_diagram_connectors,
@@ -288,6 +311,27 @@ pub fn run() {
         ])
         .setup(|app| {
             *APP_HANDLE.write().unwrap() = Some(app.handle().to_owned());
+            println!("Setting up yay!");
+
+            std::thread::spawn(move || {
+                // Simulate emitting a message after a delay
+                std::thread::sleep(std::time::Duration::from_secs(1));
+
+                //tart term and send initial update to backend
+                if let Some(app_handle) = crate::APP_HANDLE.read().unwrap().clone() {
+                    let term = crate::TERM.lock().unwrap();
+                    let content = crate::aterm::terminal_instance_to_string(&term);
+                    let payload = TerminalScreen {
+                        cols: term.cols,
+                        rows: term.rows,
+                        content: content
+                    };
+                    let payload = TerminalDownMsg::FullTermUpdate(payload);
+                    let payload = serde_json::json!(payload);
+                    app_handle.emit("term_content", payload).unwrap();
+                }
+            });
+
             Ok(())
         })
         .run(tauri::generate_context!())
